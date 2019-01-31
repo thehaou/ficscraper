@@ -40,10 +40,7 @@ if __name__ == '__main__':
     # ao3
     username = config.get('ao3', 'username')
     password = config.get('ao3', 'password')
-    bookmarks_link = config.get('ao3', 'bookmarks_link')
-    works_subscriptions_link = config.get('ao3', 'works_subscriptions_link')
-    series_subscriptions_link = config.get('ao3', 'series_subscriptions_link')
-    ao3_scraper = AO3Scraper(username, password, bookmarks_link, works_subscriptions_link, series_subscriptions_link, q)
+    ao3_scraper = AO3Scraper(username, password, q)
 
     # fanfiction.net
     user_html_link = config.get('ffn', 'user_html_link')
