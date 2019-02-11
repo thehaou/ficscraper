@@ -10,8 +10,8 @@ class ContentRating(Enum):
 
 
 class WorkRow:
-    def __init__(self, work_id, title, website, word_count, publish_epoch_sec, update_epoch_sec,
-         released_chapters_count, total_chapters_count, personal_rating, is_complete, content_rating):
+    def __init__(self, work_id, title, website, word_count, publish_epoch_sec, update_epoch_sec, released_chapters_count
+                 , total_chapters_count, personal_rating, is_complete, content_rating):
         self._work_id = work_id
         self._title = title
         self._website = website
@@ -33,7 +33,8 @@ class WorkRow:
                '\n_is_complete:%s \n_content_rating:%s>' % (self._work_id, self._title, self._website, self._word_count,
                                                             self._publish_epoch_sec, self._update_epoch_sec,
                                                             self._released_chapters_count, self._total_chapters_count,
-                                                            self._personal_rating, self._is_complete, self._content_rating))\
+                                                            self._personal_rating, self._is_complete,
+                                                            self._content_rating))\
             .encode('utf-8')
 
     def __eq__(self, other):

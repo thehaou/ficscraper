@@ -1,12 +1,24 @@
+import inspect
 import itertools
 import re
+import sys
+import traceback
 from datetime import datetime
 
 import requests
+import pickle
 from time import strptime
 from time import mktime
 from bs4 import BeautifulSoup
 from enum import Enum
+
+from postgresql.AO3OtherTagRow import AO3OtherTagRow
+from postgresql.AO3SeriesRow import AO3SeriesRow
+from postgresql.AO3WarningRow import AO3WarningRow
+from postgresql.AuthorRow import AuthorRow
+from postgresql.CharacterRow import CharacterRow
+from postgresql.FandomRow import FandomRow
+from postgresql.WorkRow import WorkRow
 
 
 class ArchiveWarning(Enum):
@@ -17,7 +29,7 @@ class ArchiveWarning(Enum):
     M = 'Mature'
     E = 'Explicit'
 
-    # Next, content rating (bottom left square)
+    # Next, archive warnings (bottom left square)
     CCNTUAW = 'Choose Not To Use Archive Warnings'
     NAWA = 'No Archive Warnings Apply'
     GDOV = 'Graphic Depictions Of Violence'
@@ -71,7 +83,12 @@ def get_quadrant(enum_set):
     if cs.pop() is ArchiveWarning.CW:
         is_complete = True
 
-    return ar.pop(), list(set(cr)), list(set(rt)), is_complete
+    # Special case: if the audience warning is 'Not Rated', this is basically null
+    ar_popped = ar.pop()
+    if ar_popped is ArchiveWarning.NR:
+        ar_popped = None
+
+    return ar_popped, list(set(cr)), list(set(rt)), is_complete
 
 
 def error_and_quit(error_msg, input_string):
@@ -120,25 +137,11 @@ class AO3Scraper:
     def __repr__(self):
         return '%s(username=%r)' % (type(self).__name__, self.username)
 
-    def process_bookmarks(self):
-        print self._log_prefix + 'Starting AO3'
-
-        website = 'ArchiveOfOurOwn'
-        personal_rating = None
-        work_row_list = set()
-        author_row_list = set()
-        fandom_row_list = set()
-        ffn_genre_row_list = set()
-        ffn_char_row_list = set()
-
-        print '\n'
-        print '/ ~~~~~~~~~~~~~~~~~~~~~~~ \\'
-        print '|      ArchiveOfOurOwn     |'
-        print '\\ ~~~~~~~~~~~~~~~~~~~~~~~ /'
-
+    def grab_pages(self):
         # Happily AO3 starts returning blank results if you exceed the max page
         api_url = (self._bookmarks_url_template % self._username)
 
+        pages = []
         for page_num in itertools.count(start=1):
             print self._log_prefix + 'searching on page ' + str(page_num)
 
@@ -149,62 +152,122 @@ class AO3Scraper:
 
             li_tags = ol_tag.findAll('li', class_='bookmark blurb group')
             if len(li_tags) > 0:
-                for li_tag in li_tags:
-                    word_count, released_chapters_count, total_chapters_count = self.process_stats(li_tag)
-
-                    if word_count is None:
-                        print self._log_prefix + 'This is a series bookmark, skipping'
-                        continue
-
-                    work_id, title, author_id, author_name, fandoms, content_rating, archive_warnings, is_complete, \
-                        update_epoch_sec = self.process_header_module(li_tag)  # publish isn't available from here...
-
-                    characters, other_tags = self.process_tags(li_tag)
-
-                    series_ids, series_names = self.process_series(li_tag)
-
-                    personal_rating = self.process_meta_tags_commas(li_tag)
-
-                    print 'work_id'
-                    print work_id
-                    print 'title'
-                    print title
-                    print 'author_id'
-                    print author_id
-                    print 'fandoms'
-                    print fandoms
-                    print 'content_rating'
-                    print content_rating
-                    print 'archive_warnings'
-                    print archive_warnings
-                    print 'update_epoch_sec'
-                    print update_epoch_sec
-                    print 'characters'
-                    print characters
-                    print 'other_tags'
-                    print other_tags
-                    print 'series_ids'
-                    print series_ids
-                    print 'series_names'
-                    print series_names
-                    print 'word_count'
-                    print word_count
-                    print 'released_chapters_count'
-                    print released_chapters_count
-                    print 'total_chapters_count'
-                    print total_chapters_count
-                    print 'is_complete'
-                    print is_complete
-                    print 'personal_rating'
-                    print personal_rating
+                pages.append(ol_tag)
             else:
                 print 'no more bookmarks found, stopping'
                 break
+        return pages
 
-        print 'done searching on ao3'
+    def process_bookmarks(self):
+        print self._log_prefix + 'Starting AO3'
+
+        QUEUE_MAX = 50
+
+        website = 'Archive of Our Own'
+        print '\n'
+        print '/ ~~~~~~~~~~~~~~~~~~~~~~~ \\'
+        print '|      ArchiveOfOurOwn     |'
+        print '\\ ~~~~~~~~~~~~~~~~~~~~~~~ /'
+
+        pages = self.grab_pages()
+        page_num = 1
+        for ol_tag in pages:
+            # Bookkeeping
+            print self._log_prefix + 'parsing page ' + str(page_num)
+            page_num += 1
+
+            # Set up lists
+            work_row_list = []
+            author_row_list = []
+            fandom_row_list = []
+            archive_warning_row_list = []
+            other_tag_row_list = []
+            series_row_list = []
+            ao3_char_row_list = []
+
+            # Scrape
+            li_tags = ol_tag.findAll('li', class_='bookmark blurb group')
+            for li_tag in li_tags:
+                word_count, released_chapters_count, total_chapters_count = self.process_stats(li_tag)
+
+                if word_count is None:
+                    print self._log_prefix + 'This is a series bookmark, skipping'
+                    continue
+
+                work_id, title, author_id, author_name, fandoms, content_rating, archive_warnings, is_complete, \
+                    update_epoch_sec = self.process_header_module(li_tag)
+                if content_rating is not None:
+                    content_rating = content_rating.name
+
+                # publish isn't available in the process_header_module unfortunately, only on the individual
+                # work page
+                publish_epoch_sec = None
+
+                characters, other_tags = self.process_tags(li_tag) # TOO MANY on page 3, e.g. https://archiveofourown.org/works/13111908/chapters/29997507
+                # characters = None
+                # other_tags = None
+
+                series_ids, series_names = self.process_series(li_tag)
+                # series_ids = None
+                # series_names = None
+
+                personal_rating = self.process_meta_tags_commas(li_tag)
+                # personal_rating = None
+
+                # Create postgresql entries
+                work_row_list.append(
+                    WorkRow(work_id, title, website, word_count, publish_epoch_sec, update_epoch_sec,
+                            released_chapters_count,
+                            total_chapters_count, personal_rating, is_complete, content_rating))
+
+                author_row_list.append(AuthorRow(work_id, author_id, author_name))
+
+                if fandoms is not None:
+                    for fandom_name in fandoms:
+                        fandom_row_list.append(FandomRow(work_id, fandom_name))
+
+                if archive_warnings is not None:
+                    for archive_warning in archive_warnings:
+                        archive_warning_row_list.append(AO3WarningRow(work_id, archive_warning.value))
+
+                if other_tags is not None:
+                    for other_tag in other_tags:
+                        other_tag_row_list.append(AO3OtherTagRow(work_id, other_tag))
+
+                if series_ids is not None:
+                    for series_id, series_name in zip(series_ids, series_names):
+                        series_row_list.append(AO3SeriesRow(work_id, series_id, series_name))
+
+                if characters is not None:
+                    for character_name in characters:
+                        ao3_char_row_list.append(CharacterRow(work_id, character_name))
+
+            # Dump them on the queue, per page
+            if len(work_row_list) > 0:
+                print str(page_num) + ' putting ' + str(len(work_row_list)) + ' works on the queue'
+                self._queue.put(('work_row_list', work_row_list))
+            if len(author_row_list) > 0:
+                print str(page_num) + ' putting ' + str(len(work_row_list)) + ' authors on the queue'
+                self._queue.put(('author_row_list', author_row_list))
+            if len(fandom_row_list) > 0:
+                print str(page_num) + ' putting ' + str(len(work_row_list)) + ' fandoms on the queue'
+                self._queue.put(('fandom_row_list', fandom_row_list))
+            if len(archive_warning_row_list) > 0:
+                print str(page_num) + ' putting ' + str(len(work_row_list)) + ' archive warnings on the queue'
+                self._queue.put(('archive_warning_row_list', archive_warning_row_list))
+            if len(other_tag_row_list) > 0:
+                print str(page_num) + ' putting ' + str(len(work_row_list)) + ' other tags on the queue'
+                self._queue.put(('other_tag_row_list', other_tag_row_list))
+            if len(series_row_list) > 0:
+                print str(page_num) + ' putting ' + str(len(work_row_list)) + ' series on the queue'
+                self._queue.put(('series_row_list', series_row_list))
+            if len(ao3_char_row_list) > 0:
+                print str(page_num) + ' putting ' + str(len(work_row_list)) + ' characters on the queue'
+                self._queue.put(('ao3_char_row_list', ao3_char_row_list))
+        print self._log_prefix + 'Exiting AO3'
 
     def process_header_module(self, bookmark):
-        print 'processing header module'
+        # print 'processing header module'
         header_module = bookmark.find('div', class_='header module')
         if header_module is None:
             error_and_quit(self._log_prefix + 'can\'t find header module class', bookmark)
@@ -218,6 +281,7 @@ class AO3Scraper:
                update_epoch_sec
 
     def process_heading(self, header_module):
+        # print 'processing process_heading module'
         heading = header_module.find('h4', class_='heading')
         if heading is None:
             error_and_quit(self._log_prefix + 'can\'t find heading class', header_module)
@@ -231,16 +295,19 @@ class AO3Scraper:
                     error_and_quit(self._log_prefix + 'can\'t parse author info', a_child)
 
             else:
-                # Grab work info
-                work_id = a_child.get('href')[7:]
-                title = a_child.contents[0]
-                if work_id is None or title is None:
-                    error_and_quit(self._log_prefix + 'can\'t parse title info', a_child)
+                # Grab work info - however, works can be written for other people, we need to ignore hrefs with /users
+                prefix = a_child.get('href')[1:6]
+                if prefix == 'works':
+                    work_id = a_child.get('href')[7:]
+                    title = a_child.contents[0]
+                    if work_id is None or title is None:
+                        error_and_quit(self._log_prefix + 'can\'t parse title info', a_child)
 
 
         return work_id, title, author_id, author_name
 
     def process_fandoms_heading(self, header_module):
+        # print 'processing process_fandoms_heading module'
         fandoms_heading = header_module.find('h5', class_='fandoms heading')
         if fandoms_heading is None:
             error_and_quit(self._log_prefix + 'can\'t find fandoms heading class', header_module)
@@ -255,6 +322,7 @@ class AO3Scraper:
         return fandoms
 
     def process_required_tags(self, header_module):
+        # print 'processing process_required_tags module'
         found_tags = set()
         required_tags = header_module.find('ul', class_='required-tags')
         if required_tags is None:
@@ -276,6 +344,7 @@ class AO3Scraper:
         :param header_module:
         :return:
         """
+        # print 'processing process_datetime module'
         datetime_child = header_module.find('p', class_='datetime')
         if datetime_child is None:
             error_and_quit(self._log_prefix + 'can\'t find datetime class', header_module)
@@ -285,6 +354,7 @@ class AO3Scraper:
         return mktime(struct_time) - mktime(datetime(1970, 1, 1).timetuple())
 
     def process_tags(self, header_module):
+        # print 'processing process_tags module'
         tags = header_module.find('ul', class_='tags commas')
         if tags is None:
             error_and_quit('couldn\'t find tags... actually this is plausible if there are NO tags, but...', header_module)
@@ -307,6 +377,7 @@ class AO3Scraper:
         return character_list, other_tags_list
 
     def process_series(self, bookmark):
+        # print 'processing process_series module'
         datetime_child = bookmark.find('ul', class_='series')
         if datetime_child is None:
             print 'Not a series, skipping process_series'
@@ -321,6 +392,7 @@ class AO3Scraper:
         return series_ids, series_names
 
     def process_stats(self, bookmark):
+        # print 'processing process_stats module'
         stats = bookmark.find('dl', class_='stats')
         if stats is None:
             error_and_quit('couldn\'t find stats class')
@@ -346,8 +418,7 @@ class AO3Scraper:
         return word_count, released_chapters_count, total_chapters_count
 
     def process_meta_tags_commas(self, bookmark):
-        # div 'class': 'own user module group'
-        # ul 'class': 'meta tags commas'
+        # print 'processing process_meta_tags_commas module'
         meta_tags_commas = bookmark.find('ul', class_='meta tags commas')
         if meta_tags_commas is None:
             print 'can\'t find any user bookmarks, skipping process_meta_tags_commas'

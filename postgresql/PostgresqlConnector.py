@@ -20,7 +20,11 @@ class PostgresqlConnector:
         # postgresql perform
         if perform_postgresql:
             for list_name in lists:
-                self.performPostgresql(insert_dict.get(list_name))
+                print 'list name is ' + list_name
+                if list_name in insert_dict:
+                    self.performPostgresql(insert_dict.get(list_name))
+                else:
+                    print 'list name ' + list_name + ' is not in the dictionary'
 
     def performPostgresql(self, row_list):
         conn = self.getPostgresqlConnection()
@@ -32,7 +36,7 @@ class PostgresqlConnector:
         self.shutdownConnection(conn)
 
     def getPostgresqlConnection(self):
-        print self._database
+        print 'database: ' + self._database
 
         # Connect to an existing _database
         return psycopg2.connect(host=self._hostname, user=self._username, password=self._password,

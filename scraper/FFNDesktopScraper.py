@@ -4,7 +4,7 @@ import re
 import requests
 
 from postgresql.AuthorRow import AuthorRow
-from postgresql.FFNCharacterRow import FFNCharacterRow
+from postgresql.CharacterRow import CharacterRow
 from postgresql.FFNGenreRow import FFNGenreRow
 from postgresql.FandomRow import FandomRow
 from postgresql.WorkRow import WorkRow
@@ -72,14 +72,14 @@ class FFNDesktopScraper(FFNScraper):
 
             if characters is not None:
                 for character_name in characters:
-                    ffn_char_row_list.add(FFNCharacterRow(work_id, character_name))
+                    ffn_char_row_list.add(CharacterRow(work_id, character_name))
 
         self._queue.put(('desktop work_row_list', work_row_list))
         self._queue.put(('desktop author_row_list', author_row_list))
         self._queue.put(('desktop fandom_row_list', fandom_row_list))
         self._queue.put(('desktop ffn_genre_row_list', ffn_genre_row_list))
         self._queue.put(('desktop ffn_char_row_list', ffn_char_row_list))
-        print  self._log_prefix + 'Exiting FanfictionDotNetDesktop'
+        print self._log_prefix + 'Exiting FanfictionDotNetDesktop'
 
     def process_author_children_stats(self, children):
         for child in children:

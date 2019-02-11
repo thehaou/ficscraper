@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 from scraper.FFNScraper import FFNScraper
 from postgresql.AuthorRow import AuthorRow
-from postgresql.FFNCharacterRow import FFNCharacterRow
+from postgresql.CharacterRow import CharacterRow
 from postgresql.FFNGenreRow import FFNGenreRow
 from postgresql.FandomRow import FandomRow
 from postgresql.WorkRow import WorkRow
@@ -95,7 +95,7 @@ class FFNMobileScraper(FFNScraper):
 
                 if characters is not None:
                     for character_name in characters:
-                        ffn_char_row_list.add(FFNCharacterRow(work_id, character_name))
+                        ffn_char_row_list.add(CharacterRow(work_id, character_name))
 
         # Place results
         self._queue.put(('mobile work_row_list', work_row_list))

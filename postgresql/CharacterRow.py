@@ -1,13 +1,13 @@
-class FFNCharacterRow:
+class CharacterRow:
     def __init__(self, work_id, character_name):
         self._work_id = work_id
         self._character_name = character_name
 
     def __repr__(self):
-        return 'FFNCharacterRow ' + self._work_id
+        return 'CharacterRow ' + self._work_id
 
     def __str__(self):
-        return ('<FFNCharacterRow \n_work_id:%s \n_character_name:%s>' %
+        return ('<CharacterRow \n_work_id:%s \n_character_name:%s>' %
                 (self._work_id, self._character_name))\
             .encode('utf-8')
 
@@ -21,7 +21,7 @@ class FFNCharacterRow:
         return hash(tuple(self.__dict__))
 
     def get_insert_query(self):
-        return 'INSERT INTO FFNCharacter (work_id, character_name) '\
+        return 'INSERT INTO Character (work_id, character_name) '\
                'VALUES (%s, %s)'
 
     def get_insert_tuple(self):
