@@ -395,7 +395,9 @@ class AO3Scraper:
         # print 'processing process_stats module'
         stats = bookmark.find('dl', class_='stats')
         if stats is None:
-            error_and_quit('couldn\'t find stats class')
+            print self._log_prefix + 'This bookmark has probably been deleted, skipping it. Bookmark:'
+            print bookmark
+            return None, None, None
 
         word_count_child = stats.find('dd', class_='words')
         if word_count_child is None:
