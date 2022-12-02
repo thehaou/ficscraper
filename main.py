@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-from configparser import ConfigParser
+import logging
 import multiprocessing
 import queue
 import sys
 import time
+
+import configparser
 
 from scraper.AO3Scraper import AO3Scraper
 
@@ -12,25 +14,30 @@ ao3_lists = {'work_row_list', 'author_row_list', 'fandom_row_list', 'archive_war
              'series_row_list', 'ao3_char_row_list'}
 global_dict = {}
 
+# Set up logging
+logging.basicConfig(level=logging.DEBUG,  # Switch to logging.INFO for less output
+                    # format=''
+                    )
+
 
 def process_queue_data(origin_tag, row_list):
-    print('processing queue data ' + origin_tag + '...')
+    logging.debug('processing queue data ' + origin_tag + '...')
     if origin_tag not in global_dict:
-        print('setting ' + origin_tag)
+        logging.debug('setting ' + origin_tag)
         global_dict[origin_tag] = row_list
-        print('new length: ' + str(len(global_dict[origin_tag])))
+        logging.debug('new length: ' + str(len(global_dict[origin_tag])))
     else:
-        print('extending ' + origin_tag)
+        logging.debug('extending ' + origin_tag)
         global_dict[origin_tag].extend(row_list)
-        print('new length: ' + str(len(global_dict[origin_tag])))
+        logging.debug('new length: ' + str(len(global_dict[origin_tag])))
 
 
 if __name__ == '__main__':
     sys.setrecursionlimit(5000)  # Be careful not to segfault...
-    print('system recursion depth is...')
-    print(sys.getrecursionlimit())  # 1000 is default... but this is dying for some reason
+    logging.debug('system recursion depth is...')
+    logging.debug(sys.getrecursionlimit())  # 1000 is default... but this is dying for some reason
 
-    config = ConfigParser.RawConfigParser()
+    config = configparser.ConfigParser()
     config.read('SETUP.INI')
 
     # set up multiprocessing queue
@@ -65,4 +72,4 @@ if __name__ == '__main__':
     ao3.join()
 
     # No guarantee about which one finishes first
-    print('queue joined')
+    logging.debug('queue joined')
