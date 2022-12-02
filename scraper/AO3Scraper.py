@@ -138,8 +138,18 @@ class AO3Scraper:
         # Happily AO3 starts returning blank results if you exceed the max page
         api_url = (self._bookmarks_url_template % self._username)
 
+        # UNCOMMENT FOR TESTING: only fetch n number of patches (I have 100+, which isn't feasible for quick testing)
+        page_count_limit = 10
+        # END UNCOMMENT SECTION
+
         pages = []
         for page_num in itertools.count(start=1):
+            # UNCOMMENT FOR TESTING
+            page_count_limit -= 1
+            if page_count_limit == 0:
+                break
+            # END UNCOMMENT SECTION
+
             logging.info(self._log_prefix + 'searching on page ' + str(page_num))
 
             req = self._sess.get(api_url % page_num)
@@ -147,7 +157,7 @@ class AO3Scraper:
 
             ol_tag = soup.find('ol', class_='bookmark index group')
 
-            li_tags = ol_tag.findAll('li', class_='bookmark blurb group')
+            li_tags = ol_tag.findAll('li', attrs={'class': re.compile('^bookmark blurb group.*')})
             if len(li_tags) > 0:
                 pages.append(ol_tag)
             else:
@@ -183,7 +193,7 @@ class AO3Scraper:
             ao3_char_row_list = []
 
             # Scrape
-            li_tags = ol_tag.findAll('li', class_='bookmark blurb group')
+            li_tags = ol_tag.findAll('li', attrs={'class': re.compile('^bookmark blurb group.*')})
             for li_tag in li_tags:
                 word_count, released_chapters_count, total_chapters_count = self.process_stats(li_tag)
 
