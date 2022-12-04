@@ -27,3 +27,13 @@ class AO3SeriesRow:
 
     def get_insert_tuple(self):
         return self._work_id, self._series_id, self._series_name
+
+    def get_csv_headers(self):
+        return ['work_id',
+                'series_id',
+                'series_name']
+
+    def get_csv_values(self):
+        return [self._work_id,
+                self._series_id,
+                self._series_name]

@@ -26,3 +26,11 @@ class AO3WarningRow:
 
     def get_insert_tuple(self):
         return self._work_id, self._warning
+
+    def get_csv_headers(self):
+        return ['work_id',
+                'warning']
+
+    def get_csv_values(self):
+        return [self._work_id,
+                self._warning]

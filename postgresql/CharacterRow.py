@@ -26,3 +26,11 @@ class CharacterRow:
 
     def get_insert_tuple(self):
         return self._work_id, self._character_name
+
+    def get_csv_headers(self):
+        return ['work_id',
+                'character_name']
+
+    def get_csv_values(self):
+        return [self._work_id,
+                self._character_name]

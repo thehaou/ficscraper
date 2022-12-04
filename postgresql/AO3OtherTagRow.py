@@ -26,3 +26,11 @@ class AO3OtherTagRow:
 
     def get_insert_tuple(self):
         return self._work_id, self._other_tag
+
+    def get_csv_headers(self):
+        return ['work_id',
+                'other_tag']
+
+    def get_csv_values(self):
+        return [self._work_id,
+                self._other_tag]

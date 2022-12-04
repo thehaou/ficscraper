@@ -26,3 +26,11 @@ class FandomRow:
 
     def get_insert_tuple(self):
         return self._work_id, self._fandom_name
+
+    def get_csv_headers(self):
+        return ['work_id',
+                'fandom_name']
+
+    def get_csv_values(self):
+        return [self._work_id,
+                self._fandom_name]

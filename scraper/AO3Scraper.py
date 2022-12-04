@@ -139,15 +139,15 @@ class AO3Scraper:
         api_url = (self._bookmarks_url_template % self._username)
 
         # UNCOMMENT FOR TESTING: only fetch n number of patches (I have 100+, which isn't feasible for quick testing)
-        page_count_limit = 2
+        # page_count_limit = 2
         # END UNCOMMENT SECTION
 
         pages = []
         for page_num in itertools.count(start=1):
             # UNCOMMENT FOR TESTING
-            page_count_limit -= 1
-            if page_count_limit == 0:
-                break
+            # page_count_limit -= 1
+            # if page_count_limit == 0:
+            #     break
             # END UNCOMMENT SECTION
 
             logging.info(self._log_prefix + 'searching on page ' + str(page_num))
