@@ -1,35 +1,16 @@
 # -*- coding: utf-8 -*-
 import logging
-import multiprocessing
-import queue
 import sys
-import time
 
+import csv
 import configparser
 
 from scraper.AO3Scraper import AO3Scraper
-
-# Globals - put these in a class later!
-ao3_lists = {'work_row_list', 'author_row_list', 'fandom_row_list', 'archive_warning_row_list', 'other_tag_row_list',
-             'series_row_list', 'ao3_char_row_list'}
-global_dict = {}
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG,  # Switch to logging.INFO for less output
                     # format=''
                     )
-
-
-def process_queue_data(origin_tag, row_list):
-    logging.debug('processing queue data ' + origin_tag + '...')
-    if origin_tag not in global_dict:
-        logging.debug('setting ' + origin_tag)
-        global_dict[origin_tag] = row_list
-        logging.debug('new length: ' + str(len(global_dict[origin_tag])))
-    else:
-        logging.debug('extending ' + origin_tag)
-        global_dict[origin_tag].extend(row_list)
-        logging.debug('new length: ' + str(len(global_dict[origin_tag])))
 
 
 if __name__ == '__main__':
@@ -40,36 +21,21 @@ if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read('SETUP.INI')
 
-    # set up multiprocessing queue
-    q = multiprocessing.Queue()
-
     # ao3
     username = config.get('ao3', 'username')
     password = config.get('ao3', 'password')
-    ao3_scraper = AO3Scraper(username, password, q)
+    ao3_scraper = AO3Scraper(username, password)
 
-    # create processes
-    # , args=(user_html_mobile_link, q)
-    ao3 = multiprocessing.Process(target=ao3_scraper.process_bookmarks)
+    # Save multiprocessing for some other time - pickling bs4 is pain and I don't want to deal with it right now.
+    # Maybe we should do multiprocessing per page over in AO3Scraper instead?
+    fics_dict = ao3_scraper.process_bookmarks()
 
-    liveprocs = [ao3]
+    # Convert to CSV here?
+    for fics_data_kind in fics_dict.keys():
+        with open('csv_output/{}.csv'.format(fics_data_kind), 'w') as f:
+            write = csv.writer(f)
+            # First write headers
+            write.writerow(fics_dict[fics_data_kind][0].get_csv_headers())
 
-    ao3.start()
-
-    # try pulling
-    while liveprocs:
-        try:
-            while 1:
-                process_queue_data(q.get(False))
-        except queue.Empty:
-            pass
-
-        time.sleep(0.5)  # Give tasks a chance to put more data in
-        if not q.empty():
-            continue
-        liveprocs = [p for p in liveprocs if p.is_alive()]
-
-    ao3.join()
-
-    # No guarantee about which one finishes first
-    logging.debug('queue joined')
+            # Then write all the entries
+            write.writerows([fic.get_csv_values() for fic in fics_dict[fics_data_kind]])

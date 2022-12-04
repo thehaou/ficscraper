@@ -6,6 +6,7 @@ import logging
 import requests
 from time import strptime
 from time import mktime
+from time import sleep
 from bs4 import BeautifulSoup
 from enum import Enum
 
@@ -88,18 +89,17 @@ def get_quadrant(enum_set):
     return ar_popped, list(set(cr)), list(set(rt)), is_complete
 
 
-def error_and_quit(error_msg, input_string):
+def error_and_quit(error_msg, input_string=""):
     logging.error(error_msg)
     logging.error(input_string)
     exit(-1)
 
 
 class AO3Scraper:
-    def __init__(self, username, password, queue):
+    def __init__(self, username, password):
         self._log_prefix = 'ao3 '
         self._username = username
         self._password = password
-        self._queue = queue
         self._bookmarks_url_template = 'https://archiveofourown.org/users/%s/bookmarks?page=%%d'
         self._works_subscriptions_url_template = 'https://archiveofourown.org/users/%s/subscriptions?type=works'
         self._series_subscriptions_url_template = 'https://archiveofourown.org/users/%s/subscriptions?type=series'
@@ -139,7 +139,7 @@ class AO3Scraper:
         api_url = (self._bookmarks_url_template % self._username)
 
         # UNCOMMENT FOR TESTING: only fetch n number of patches (I have 100+, which isn't feasible for quick testing)
-        page_count_limit = 10
+        page_count_limit = 2
         # END UNCOMMENT SECTION
 
         pages = []
@@ -152,7 +152,16 @@ class AO3Scraper:
 
             logging.info(self._log_prefix + 'searching on page ' + str(page_num))
 
-            req = self._sess.get(api_url % page_num)
+            while True:
+                req = self._sess.get(api_url % page_num)
+                if req.status_code == 429:
+                    # https://otwarchive.atlassian.net/browse/AO3-5761
+                    logging.error("AO3 rate limits; we will receive 429 \"Too Many Requests\" if we ask for pages "
+                                  "too often. We need to wait for several minutes, sorry!")
+                    logging.info("Sleeping for 5 min")
+                    sleep(60 * 5)
+                else:
+                    break
             soup = BeautifulSoup(req.text, features='html.parser')
 
             ol_tag = soup.find('ol', class_='bookmark index group')
@@ -168,8 +177,6 @@ class AO3Scraper:
     def process_bookmarks(self):
         logging.info(self._log_prefix + 'Starting AO3')
 
-        QUEUE_MAX = 50
-
         website = 'Archive of Our Own'
         logging.info('\n')
         logging.info('/ ~~~~~~~~~~~~~~~~~~~~~~~ \\')
@@ -178,6 +185,13 @@ class AO3Scraper:
 
         pages = self.grab_pages()
         page_num = 1
+        total_work_row_list = []
+        total_author_row_list = []
+        total_fandom_row_list = []
+        total_archive_warning_row_list = []
+        total_other_tag_row_list = []
+        total_series_row_list = []
+        total_ao3_char_row_list = []
         for ol_tag in pages:
             # Bookkeeping
             logging.info(self._log_prefix + 'parsing page ' + str(page_num))
@@ -218,14 +232,14 @@ class AO3Scraper:
                 # series_ids = None
                 # series_names = None
 
-                personal_rating = self.process_meta_tags_commas(li_tag)
-                # personal_rating = None
+                date_bookmarked, user_tags = self.process_user_bookmark(li_tag)
+                # user_tags = None
 
                 # Create postgresql entries
                 work_row_list.append(
                     WorkRow(work_id, title, website, word_count, publish_epoch_sec, update_epoch_sec,
                             released_chapters_count,
-                            total_chapters_count, personal_rating, is_complete, content_rating))
+                            total_chapters_count, user_tags, is_complete, content_rating, date_bookmarked))
 
                 author_row_list.append(AuthorRow(work_id, author_id, author_name))
 
@@ -252,26 +266,35 @@ class AO3Scraper:
             # Dump them on the queue, per page
             if len(work_row_list) > 0:
                 logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' works on the queue')
-                self._queue.put(('work_row_list', work_row_list))
+                total_work_row_list.extend(work_row_list)
             if len(author_row_list) > 0:
                 logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' authors on the queue')
-                self._queue.put(('author_row_list', author_row_list))
+                total_author_row_list.extend(author_row_list)
             if len(fandom_row_list) > 0:
                 logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' fandoms on the queue')
-                self._queue.put(('fandom_row_list', fandom_row_list))
+                total_fandom_row_list.extend(fandom_row_list)
             if len(archive_warning_row_list) > 0:
                 logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' archive warnings on the queue')
-                self._queue.put(('archive_warning_row_list', archive_warning_row_list))
+                total_archive_warning_row_list.extend(archive_warning_row_list)
             if len(other_tag_row_list) > 0:
                 logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' other tags on the queue')
-                self._queue.put(('other_tag_row_list', other_tag_row_list))
+                total_other_tag_row_list.extend(other_tag_row_list)
             if len(series_row_list) > 0:
                 logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' series on the queue')
-                self._queue.put(('series_row_list', series_row_list))
+                total_series_row_list.extend(series_row_list)
             if len(ao3_char_row_list) > 0:
                 logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' characters on the queue')
-                self._queue.put(('ao3_char_row_list', ao3_char_row_list))
+                total_ao3_char_row_list.extend(ao3_char_row_list)
         logging.info(self._log_prefix + 'Exiting AO3')
+        return {
+            "works": total_work_row_list,
+            "authors": total_author_row_list,
+            "fandoms": total_fandom_row_list,
+            "warnings": total_archive_warning_row_list,
+            "misc": total_other_tag_row_list,
+            "series": total_series_row_list,
+            "characters": total_ao3_char_row_list
+        }
 
     def process_header_module(self, bookmark):
         # logging.debug('processing header module')
@@ -292,6 +315,11 @@ class AO3Scraper:
         heading = header_module.find('h4', class_='heading')
         if heading is None:
             error_and_quit(self._log_prefix + 'can\'t find heading class', header_module)
+
+        # Some authors are listed as Anonymous, and thus, have no author profile to link to.
+        # See https://archiveofourown.org/collections/anonymous for more details.
+        author_name = 'Anonymous'
+        author_id = 'Anonymous'
 
         for a_child in heading.findAll('a'):
             if a_child.get('rel') is not None:
@@ -357,7 +385,7 @@ class AO3Scraper:
 
         dd_Month_YYYY = datetime_child.contents[0]
         struct_time = strptime(dd_Month_YYYY, "%d %b %Y")
-        return mktime(struct_time) - mktime(datetime(1970, 1, 1).timetuple())
+        return int(mktime(struct_time) - mktime(datetime(1970, 1, 1).timetuple()))
 
     def process_tags(self, header_module):
         # logging.debug('processing process_tags module')
@@ -386,9 +414,9 @@ class AO3Scraper:
         # logging.debug('processing process_series module')
         datetime_child = bookmark.find('ul', class_='series')
         if datetime_child is None:
-            logging.debug('Not a series, skipping process_series')
             return None, None
 
+        logging.debug('This is a series, actual going through process_series')
         series_ids = []
         series_names = []
         for a_child in datetime_child.findAll('a'):
@@ -417,21 +445,36 @@ class AO3Scraper:
         chapters_count_child = stats.find('dd', class_='chapters')
         if chapters_count_child is None:
             error_and_quit('couldn\'t find chapter count')
-        chapters_split = chapters_count_child.contents[0].split('/')
-        released_chapters_count = chapters_split[0]
+
+        # If a chapter is 1/1, the contents will all be in one element.
+        # But if a chapter has multiple, regardless of if it is finished, the released chapters # will be in an
+        # a-tag, and the total chapters will be in the second contents element. : (
+
+        contents_first_elem = chapters_count_child.contents[0]
+        if contents_first_elem.next_sibling:
+            # We have a multi chapter on our hands!
+            released_chapters_count = contents_first_elem.contents[0]
+            total_chapters_elem = chapters_count_child.contents[1].split('/')[1]
+        else:
+            chapters_split = chapters_count_child.contents[0].split('/')
+            released_chapters_count = chapters_split[0]
+            total_chapters_elem = chapters_split[1]
+
         total_chapters_count = None
-        if chapters_split[1] != '?':
-            total_chapters_count = chapters_split[1]
+        if total_chapters_elem != '?':
+            total_chapters_count = total_chapters_elem
 
         return word_count, released_chapters_count, total_chapters_count
 
-    def process_meta_tags_commas(self, bookmark):
-        # logging.debug('processing process_meta_tags_commas module')
-        meta_tags_commas = bookmark.find('ul', class_='meta tags commas')
-        if meta_tags_commas is None:
-            logging.info('can\'t find any user bookmarks, skipping process_meta_tags_commas')
-            return None
+    def process_user_bookmark(self, bookmark):
+        # logging.debug('processing process_user_bookmark module')
+        user_bookmark = bookmark.find('div', class_='own user module group')
+        date_bookmarked = self.process_datetime(user_bookmark)
 
-        # TODO - support multiple tags properly
+        meta_tags_commas = user_bookmark.find('ul', class_='meta tags commas')
+        user_tags = []
+
         for a_child in meta_tags_commas.findAll('a'):
-            return a_child.contents[0]
+            user_tags.append(a_child.contents[0])
+
+        return date_bookmarked, user_tags
