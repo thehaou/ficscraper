@@ -254,6 +254,25 @@ def calc_wc_per_fandom(cur, year: int = None):
     for r in rows:
         print(r)
 
+def select_first_fic_per_fandom(cur, year: int = None):
+    print("Running first fic per fandom")
+    date_where = ''
+    if year:
+        epoch = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
+
+    calc_query = """
+    SELECT fandoms.fandom_name, min(works.date_bookmarked) as first_bookmark, count(works.work_id) as num_works, sum(works.word_count) as total_wc, title, works.work_id
+    FROM works
+    INNER JOIN fandoms ON works.work_id = fandoms.work_id
+    {date_where}    
+    GROUP BY fandoms.fandom_name
+    ORDER BY num_works DESC
+    """.format(date_where=date_where)
+    rows = cur.execute(calc_query).fetchall()
+    for r in rows:
+        print(r)
+
 def calc_wc_per_author(cur, year: int = None):
     print("Running wordcount per author")
     date_where = ''
@@ -291,9 +310,10 @@ if __name__ == '__main__':
 
     # --- Works AND fandoms
     # calc_wc_per_fandom(sqlite_cursor, year=2022)
+    select_first_fic_per_fandom(sqlite_cursor, year=2022)
 
     # --- Works AND authors
-    calc_wc_per_author(sqlite_cursor, year=2022)
+    # calc_wc_per_author(sqlite_cursor, year=2022)
 
     # Cleanup
     sql_connection.commit()
