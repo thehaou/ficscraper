@@ -1,0 +1,55 @@
+/* AO3 style info: http://otwcode.github.io/docs/front_end_coding/style-guide.html */
+/* Gotta use CSS, not something like SCSS, to work with html2image */
+:root {
+    /* pseudoclass that applies globally */
+    --ao3-red: #990000; /* logo, mast head, titles, tag hover */
+    --ao3-misc-red-1: #a00; /* header, footer, tag clouds */
+    --ao3-misc-red-2: #700; /* these get darker as we go down*/
+    --ao3-misc-red-3: #600;
+    --ao3-misc-red-4: #500;
+    --ao3-misc-red-5: #400;
+    --ao3-misc-red-6: #300;
+    --ao3-misc-red-7: #200;
+    --ao3-white: #FFFFFF; /* page bg */
+    --ao3-black: #000000;
+    --ao3-light-grey: #2A2A2A;
+    --ao3-dark-grey: #; /* text */
+    --ao3-darkest-grey: #111111; /* links */
+    --ao3-misc-grey-1: #eee; /* box coloring, border markings, shadows */
+    --ao3-misc-grey-2: #ddd; /* these get darker as we go down*/
+    --ao3-misc-grey-3: #ccc
+    --ao3-misc-grey-4: #bbb;
+    --ao3-misc-grey-5: #aaa;
+    --ao3-misc-grey-6: #999;
+    --ao3-misc-grey-7: #777
+    --ao3-misc-grey-8: #666;
+    --ao3-misc-grey-9: #555;
+    --ao3-misc-grey-10: #444;
+    --ao3-misc-grey-11: #333;
+    --ao3-state-grey: #e8e6ed; /* not sure what 'states' are */
+    --ao3-state-green: green;
+    --ao3-state-yellow: #daa520;
+    --ao3-interaction-green: #0c0; /* not sure what 'interactions' are */
+    --ao3-interaction-red: #c00;
+    --ao3-interaction-light-yellow: #ffffa3;
+    --ao3-interaction-yellow: #f1d031;
+    --ao3-interaction-light-grey: #f3efec;
+    --ao3-system-blue-background: #d1e1ef; /* success, messages, additional info */
+    --ao3-system-blue-border: #c2d2df;
+    --ao3-system-red-background: #efd1d1; /* error, go back and fix problem */
+    --ao3-system-red-border: #900;
+    --ao3-system-yellow-background: #ffe34e; /* warning, click to proceed, correct error */
+    --ao3-system-yellow-border: #d89e36;
+    --ao3-system-yellow-text: #000;
+    /* Fonts */
+    --electronic-body-font: Lucida Grande;
+    --electronic-headings-font: Georgia;
+    --electronic-code-date-font: Monaco; /* maybe courier? */
+}
+
+p {
+    font-family: var(--electronic-body-font);
+    color: var(--ao3-system-yellow-background);
+    display: flex;
+    justify-content: center;
+}
