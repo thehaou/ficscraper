@@ -165,6 +165,11 @@ class AO3Scraper:
             soup = BeautifulSoup(req.text, features='html.parser')
 
             ol_tag = soup.find('ol', class_='bookmark index group')
+            if not ol_tag:
+                logging.error("Could not find bookmark index group on soup; something is seriously wrong. soup:")
+                logging.error(soup)
+                logging.error("Skipping this page...")
+                continue
 
             li_tags = ol_tag.findAll('li', attrs={'class': re.compile('^bookmark blurb group.*')})
             if len(li_tags) > 0:
@@ -448,7 +453,7 @@ class AO3Scraper:
 
         # If a chapter is 1/1, the contents will all be in one element.
         # But if a chapter has multiple, regardless of if it is finished, the released chapters # will be in an
-        # a-tag, and the total chapters will be in the second contents element. : (
+        # a-tag, and the total chapters will be in the second contents element. :'(
 
         contents_first_elem = chapters_count_child.contents[0]
         if contents_first_elem.next_sibling:
@@ -473,8 +478,8 @@ class AO3Scraper:
 
         meta_tags_commas = user_bookmark.find('ul', class_='meta tags commas')
         user_tags = []
-
-        for a_child in meta_tags_commas.findAll('a'):
-            user_tags.append(a_child.contents[0])
+        if meta_tags_commas:
+            for a_child in meta_tags_commas.findAll('a'):
+                user_tags.append(a_child.contents[0])
 
         return date_bookmarked, user_tags
