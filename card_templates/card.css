@@ -47,9 +47,60 @@
     --electronic-code-date-font: Monaco; /* maybe courier? */
 }
 
-p {
-    font-family: var(--electronic-body-font);
-    color: var(--ao3-system-yellow-background);
+.statistic_header {
+    /* Positioning */
+    display: flex;
+    justify-content: space-between;
+
+    /* Colors */
+    background-color: var(--ao3-misc-red-1);
+    color: var(--ao3-white);
+}
+
+body {
+    /* Size */
+    width: 360px;
+    height: 640px;
+
+    /* Positioning */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    /* Colors */
+    background-color: var(--ao3-white);
+    color: var(--ao3-dark-grey);
+}
+
+.footer {
+    /* Positioning */
     display: flex;
     justify-content: center;
+
+    /* Colors */
+    background-color: var(--ao3-misc-red-1);
+    color: var(--ao3-white);
+}
+
+.list_header {
+    font-size: 12px;
+}
+
+.list_details {
+    font-size: 10px;
+}
+
+.new {
+    background-color: var(--ao3-system-blue-background);
+    border-color: var(--ao3-system-blue-border);
+}
+
+.disclaimer {
+    font-family: var(--electronic-body-font);
+    font-size: 8px;
+}
+
+.github_link {
+    font-family: var(--electronic-body-font);
+    font-size: 8px;
 }

@@ -1,2 +1,5 @@
 *.pyc
 SETUP.INI
+.idea
+.DS_Store
+ao3_yir.db

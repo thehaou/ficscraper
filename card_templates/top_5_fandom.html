@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="card.css">
+    <title>Title</title>
+</head>
+<body>
+    <!-- name of card goes here -->
+    <div class="statistic_header">Top Fandoms</div>
+
+    <!-- Then we put in some stats -->
+    % for item in items:
+        <div class="list_header">${item['name']}</div>
+        <div class="list_details">${item['details']}</div>
+    % endfor
+
+    <!-- Then the bottom card -->
+    <div class="footer">
+        <div class="disclaimer">Disclaimer: Not an official OTW product.</div>
+        <div class="github_link">https://github.com/thehaou/ficscraper</div>
+    </div>
+</body>
+</html>
