@@ -1,6 +1,7 @@
 import csv
 import datetime
 import sqlite3
+import pandas as pd
 
 def setup_sqlite():
     # Make a new db; open connection
@@ -66,7 +67,12 @@ def drop_and_setup_sqlite():
     return con, cur
 
 def import_authors_csv(cur):
-    with open('csv_output/authors.csv', 'r') as f:
+    # Clean CSV - move this out to another step
+    df = pd.read_csv('csv_output/authors.csv')
+    df.drop_duplicates(inplace=True)
+    df.to_csv('csv_output/authors_deduped.csv', index=False)
+
+    with open('csv_output/authors_deduped.csv', 'r') as f:
         # # Real fast, need to find dupe ids
         # work_ids = {}
         # contents = csv.reader(f)
@@ -100,7 +106,12 @@ def import_authors_csv(cur):
         cur.executemany(insert_records, contents)
 
 def import_fandoms_csv(cur):
-    with open('csv_output/fandoms.csv', 'r') as f:
+    # Clean CSV - move this out to another step
+    df = pd.read_csv('csv_output/fandoms.csv')
+    df.drop_duplicates(inplace=True)
+    df.to_csv('csv_output/fandoms_deduped.csv', index=False)
+
+    with open('csv_output/fandoms_deduped.csv', 'r') as f:
         # # Real fast, need to find dupe ids
         # work_ids = {}
         # contents = csv.reader(f)
@@ -132,7 +143,12 @@ def import_fandoms_csv(cur):
         cur.executemany(insert_records, contents)
 
 def import_works_csv(cur):
-    with open('csv_output/works.csv', 'r') as f:
+    # Clean CSV - move this out to another step
+    df = pd.read_csv('csv_output/works.csv')
+    df.drop_duplicates(inplace=True)
+    df.to_csv('csv_output/works_deduped.csv', index=False)
+
+    with open('csv_output/works_deduped.csv', 'r') as f:
         # # Real fast, need to find dupe ids
         # work_ids = {}
         # contents = csv.reader(f)
@@ -181,8 +197,10 @@ def select_all(cur, year: int = None):
     print("Running select-all")
     date_where = ''
     if year:
-        epoch = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
-        date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
+        epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        epoch_end = datetime.datetime(year=year + 1, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch_start} AND date_bookmarked < {epoch_end}' \
+            .format(epoch_start=epoch_start, epoch_end=epoch_end)
 
     select_all_query = """
     SELECT * 
@@ -197,8 +215,10 @@ def calc_total_wc_read(cur, year: int = None):
     print("Running word count summation")
     date_where = ''
     if year:
-        epoch = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
-        date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
+        epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        epoch_end = datetime.datetime(year=year + 1, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch_start} AND date_bookmarked < {epoch_end}' \
+            .format(epoch_start=epoch_start, epoch_end=epoch_end)
 
     calc_query = """
     SELECT sum(word_count) as total_word_count 
@@ -213,8 +233,10 @@ def select_biggest_works(cur, year: int = None):
     print("Running biggest works of the year")
     date_where = ''
     if year:
-        epoch = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
-        date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
+        epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        epoch_end = datetime.datetime(year=year + 1, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch_start} AND date_bookmarked < {epoch_end}'\
+            .format(epoch_start=epoch_start, epoch_end=epoch_end)
 
     select_query = """
     SELECT title, word_count  
@@ -243,8 +265,10 @@ def calc_wc_and_works_per_fandom(cur, year: int = None):
     print("Running wordcount per fandom")
     date_where = ''
     if year:
-        epoch = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
-        date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
+        epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        epoch_end = datetime.datetime(year=year + 1, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch_start} AND date_bookmarked < {epoch_end}' \
+            .format(epoch_start=epoch_start, epoch_end=epoch_end)
 
     calc_query = """
     SELECT fandoms.fandom_name, SUM(works.word_count) as total_wc, COUNT(works.work_id) as num_works
@@ -263,8 +287,10 @@ def select_first_fic_per_fandom_wc(cur, year: int = None):
     print("Running first fic per fandom")
     date_where = ''
     if year:
-        epoch = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
-        date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
+        epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        epoch_end = datetime.datetime(year=year + 1, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch_start} AND date_bookmarked < {epoch_end}' \
+            .format(epoch_start=epoch_start, epoch_end=epoch_end)
 
     calc_query = """
     SELECT fandoms.fandom_name, min(works.date_bookmarked) as first_bookmark, count(works.work_id) as num_works, sum(works.word_count) as total_wc, title, works.work_id, authors.author_id
@@ -284,8 +310,10 @@ def calc_wc_per_author(cur, year: int = None):
     print("Running wordcount per author")
     date_where = ''
     if year:
-        epoch = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
-        date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
+        epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        epoch_end = datetime.datetime(year=year + 1, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch_start} AND date_bookmarked < {epoch_end}' \
+            .format(epoch_start=epoch_start, epoch_end=epoch_end)
 
     calc_query = """
     SELECT authors.author_id, SUM(works.word_count) as total_wc
@@ -304,8 +332,10 @@ def calc_works_per_author(cur, year: int = None):
     print("Running works per author")
     date_where = ''
     if year:
-        epoch = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
-        date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
+        epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        epoch_end = datetime.datetime(year=year + 1, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch_start} AND date_bookmarked < {epoch_end}' \
+            .format(epoch_start=epoch_start, epoch_end=epoch_end)
 
     calc_query = """
     SELECT authors.author_id, COUNT(works.work_id) as total_wc
@@ -330,12 +360,12 @@ if __name__ == '__main__':
 
     # Let's calculate stats
     # --- Just works
-    # select_all(sqlite_cursor)  # Testing
+    select_all(sqlite_cursor)  # Testing
     calc_total_wc_read(sqlite_cursor, year=2022)
-    # select_biggest_works(sqlite_cursor, year=2022)
+    select_biggest_works(sqlite_cursor, year=2022)
 
     # --- Just fandoms
-    # calc_most_per_fandom(sqlite_cursor)
+    calc_most_per_fandom(sqlite_cursor)
 
     # --- Works AND fandoms
     calc_wc_and_works_per_fandom(sqlite_cursor, year=2022)

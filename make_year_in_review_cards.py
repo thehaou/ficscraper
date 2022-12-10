@@ -7,6 +7,24 @@ from mako.exceptions import RichTraceback
 from sqlite_stats import setup_sqlite, calc_wc_and_works_per_fandom, calc_wc_per_author, calc_works_per_author, \
     select_first_fic_per_fandom_wc
 
+"""
+This file generates some stats one might find interesting for a year-in-review. Cards are outputted to the /card_output
+directory in JPG format.
+
+Cards generated right now are:
+* Top 5 fandoms (by total wc of fics you read from them) (Uses the Top 5 card template 'top_5.html')
+* Top 5 authors (by total wc of fics you read from them) (Uses the Top 5 card template 'top_5.html')
+* Top 5 authors (by total # of fics you read from them) (Uses the Top 5 card template 'top_5.html')
+* First fic + date bookmarked for your Top 5 fandoms (by total wc of fics you read from fandom) 
+                                                      (Uses the Top 5 card template 'top_5.html')
+                                                      
+                                                      
+You can modify the "year" field right below this message to change which year it calculates year-in-review for. 
+"""
+
+# TODO move out to constants file?
+year = 2022
+subheading = "— AO3 {} YEAR-IN-REVIEW —".format(year)
 
 # Testing-related things. TODO move out to a testing folder?
 def get_test_5_ranked_items():
@@ -51,7 +69,7 @@ def export_html_as_image(html: str, image_name='test.jpg'):
 def make_top_5_fandom_card(image_name):
     # Get stats
     con, cur = setup_sqlite()
-    top_rows = calc_wc_and_works_per_fandom(cur, year=2022)  # a tuple
+    top_rows = calc_wc_and_works_per_fandom(cur, year=year)  # a tuple
 
     # Compute just the top five from all the rows we got back
     top_five_rows = get_top_five_from_prefix(top_rows)
@@ -59,7 +77,6 @@ def make_top_5_fandom_card(image_name):
     # Make the details for the template
     title = "Your Biggest Fandoms"
     title_flavor = "Once you went in, there was no coming back"
-    subheading = "— AO3 YEAR-IN-REVIEW —"
     ranked_items = []
     for row in top_five_rows:
         fandom_name = row[0]
@@ -92,7 +109,7 @@ def make_top_5_fandom_card(image_name):
 def make_top_5_authors_wc_card(image_name):
     # Get stats
     con, cur = setup_sqlite()
-    top_rows = calc_wc_per_author(cur, year=2022)  # a tuple
+    top_rows = calc_wc_per_author(cur, year=year)  # a tuple
 
     # Do some special cleaning on author names
     top_rows = get_top_five_active(top_rows)
@@ -100,7 +117,6 @@ def make_top_5_authors_wc_card(image_name):
     # Make the details for the template
     title = "Most-Read Authors"
     title_flavor = "You committed to the long haul"
-    subheading = "— AO3 YEAR-IN-REVIEW —"
     ranked_items = []
     for row in top_rows:
         author_id = row[0]
@@ -132,7 +148,7 @@ def make_top_5_authors_wc_card(image_name):
 def make_top_5_authors_count_card(image_name):
     # Get stats
     con, cur = setup_sqlite()
-    top_rows = calc_works_per_author(cur, year=2022)  # a tuple
+    top_rows = calc_works_per_author(cur, year=year)  # a tuple
 
     # Do some special cleaning on author names
     top_rows = get_top_five_active(top_rows)
@@ -140,12 +156,11 @@ def make_top_5_authors_count_card(image_name):
     # Make the details for the template
     title = "Most-Read Authors"
     title_flavor = "You followed their pen and paper closely, like a detective"
-    subheading = "— AO3 YEAR-IN-REVIEW —"
     ranked_items = []
     for row in top_rows:
         author_id = row[0]
         total_wc = row[1]
-        details_template = "{:,} words read"  # We won't format here because I want the vars to be bolded.
+        details_template = "{:,} works read"  # We won't format here because I want the vars to be bolded.
         # See top_5.html opt_vars for more info
         details_template_vars = [total_wc]
         ranked_items.append({'name': author_id,
@@ -171,7 +186,7 @@ def make_top_5_authors_count_card(image_name):
 def make_first_fic_of_top_5_fandoms(image_name):
     # Get stats
     con, cur = setup_sqlite()
-    top_rows = select_first_fic_per_fandom_wc(cur, year=2022)  # a tuple
+    top_rows = select_first_fic_per_fandom_wc(cur, year=year)  # a tuple
 
     # Compute just the top five from all the rows we got back
     top_five_rows = get_top_five_from_prefix(top_rows)
@@ -179,8 +194,12 @@ def make_first_fic_of_top_5_fandoms(image_name):
     # Make the details for the template
     title = "Big Fandoms: What and When"
     title_flavor = "The devouring of a fandom begins with a single step"
-    subheading = "— AO3 YEAR-IN-REVIEW —"
     ranked_items = []
+
+    # TODO remove, this is hacky and only necessary because I messed up bookmark orderings and I am
+    # keenly aware of what my actual Batman-entry fic was. :, (
+    # top_five_rows[0] = (top_five_rows[0][0], 1656658800, top_five_rows[0][2], top_five_rows[0][3], "repetitio est mater studiorum", 31849066, "distortopia")
+
     for row in top_five_rows:
         fandom_name = row[0]
         date_bookmarked_epoch_ms = row[1]
@@ -283,7 +302,7 @@ def get_top_five_active(rows):
 
 
 if __name__ == '__main__':
-    make_top_5_fandom_card(image_name='top_5_fandoms.jpg')
-    make_top_5_authors_wc_card(image_name='top_5_authors_wc.jpg')
-    make_top_5_authors_count_card(image_name='top_5_authors_works.jpg')
-    make_first_fic_of_top_5_fandoms(image_name='top_5_fandoms_first_fic.jpg')
+    make_top_5_fandom_card(image_name='{}_top_5_fandoms.jpg'.format(year))
+    make_top_5_authors_wc_card(image_name='{}_top_5_authors_wc.jpg'.format(year))
+    make_top_5_authors_count_card(image_name='{}_top_5_authors_works.jpg'.format(year))
+    make_first_fic_of_top_5_fandoms(image_name='{}_top_5_fandoms_first_fic.jpg'.format(year))
