@@ -239,15 +239,17 @@ def select_biggest_works(cur, year: int = None):
             .format(epoch_start=epoch_start, epoch_end=epoch_end)
 
     select_query = """
-    SELECT title, word_count  
+    SELECT works.title, works.word_count, authors.author_id
     FROM works
+    INNER JOIN authors on works.work_id = authors.work_id
     {date_where}
     ORDER BY word_count DESC
     """.format(date_where=date_where)
 
     rows = cur.execute(select_query).fetchall()
-    for r in rows:
-        print(r)
+    # for r in rows:
+    #     print(r)
+    return rows
 
 def calc_most_per_fandom(cur):
     print("Running # of fics per fandom")
@@ -363,6 +365,7 @@ if __name__ == '__main__':
     select_all(sqlite_cursor)  # Testing
     calc_total_wc_read(sqlite_cursor, year=2022)
     select_biggest_works(sqlite_cursor, year=2022)
+
 
     # --- Just fandoms
     calc_most_per_fandom(sqlite_cursor)

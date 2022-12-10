@@ -5,7 +5,7 @@ from mako.template import Template
 from mako.exceptions import RichTraceback
 
 from sqlite_stats import setup_sqlite, calc_wc_and_works_per_fandom, calc_wc_per_author, calc_works_per_author, \
-    select_first_fic_per_fandom_wc
+    select_first_fic_per_fandom_wc, select_biggest_works
 
 """
 This file generates some stats one might find interesting for a year-in-review. Cards are outputted to the /card_output
@@ -233,6 +233,48 @@ def make_first_fic_of_top_5_fandoms(image_name):
     export_html_as_image(html=rendered_template, image_name=image_name)
     print("Done")
 
+def make_top_5_longest_works_card(image_name):
+    # Get stats
+    con, cur = setup_sqlite()
+    top_rows = select_biggest_works(cur, year=year)  # a tuple
+
+    # Just truncate
+    top_five_rows = top_rows[:5]
+
+    # Make the details for the template
+    title = "Longest Works Read"
+    title_flavor = "You really sunk your teeth in"
+    ranked_items = []
+
+    for row in top_five_rows:
+        work_title = row[0]
+        wc = row[1]
+        author_id = row[2]
+
+        details_template = "\"" + work_title + "\" by {}"
+
+        # See top_5.html opt_vars for more info
+        details_template_vars = [author_id]
+        ranked_items.append({'name': "{:,} words".format(wc),
+                             'details_template': details_template,
+                             'details_template_vars': details_template_vars})
+
+    # Make the mako template
+    rendered_template = render_mako_template(template_file_name="card_templates/top_5.html",
+                                             template_args={"title": title,
+                                                            "title_flavor": title_flavor,
+                                                            "subheading": subheading,
+                                                            "ranked_items": ranked_items})
+
+    # Write out the HTML to a test file. This is really just for testing CSS quickly in-browser
+    # TODO test code, flesh out test folder with it...?
+    with open('card_templates/test.html', 'w') as f:
+        f.write(rendered_template)
+
+    # Capture HTML to a jpg into our card_output folder
+    export_html_as_image(html=rendered_template, image_name=image_name)
+    print("Done")
+
 # Card-making helpers - usually for odd edge cases
 def get_top_five_from_prefix(rows):
     """
@@ -306,3 +348,4 @@ if __name__ == '__main__':
     make_top_5_authors_wc_card(image_name='{}_top_5_authors_wc.jpg'.format(year))
     make_top_5_authors_count_card(image_name='{}_top_5_authors_works.jpg'.format(year))
     make_first_fic_of_top_5_fandoms(image_name='{}_top_5_fandoms_first_fic.jpg'.format(year))
+    make_top_5_longest_works_card(image_name='{}_top_5_longest_works.jpg'.format(year))
