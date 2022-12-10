@@ -259,7 +259,7 @@ def calc_wc_and_works_per_fandom(cur, year: int = None):
     #     print(r)
     return rows
 
-def select_first_fic_per_fandom(cur, year: int = None):
+def select_first_fic_per_fandom_wc(cur, year: int = None):
     print("Running first fic per fandom")
     date_where = ''
     if year:
@@ -267,16 +267,18 @@ def select_first_fic_per_fandom(cur, year: int = None):
         date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
 
     calc_query = """
-    SELECT fandoms.fandom_name, min(works.date_bookmarked) as first_bookmark, count(works.work_id) as num_works, sum(works.word_count) as total_wc, title, works.work_id
+    SELECT fandoms.fandom_name, min(works.date_bookmarked) as first_bookmark, count(works.work_id) as num_works, sum(works.word_count) as total_wc, title, works.work_id, authors.author_id
     FROM works
     INNER JOIN fandoms ON works.work_id = fandoms.work_id
+    INNER JOIN authors on works.work_id = authors.work_id
     {date_where}    
     GROUP BY fandoms.fandom_name
-    ORDER BY num_works DESC
+    ORDER BY total_wc DESC
     """.format(date_where=date_where)
     rows = cur.execute(calc_query).fetchall()
-    for r in rows:
-        print(r)
+    # for r in rows:
+    #     print(r)
+    return rows
 
 def calc_wc_per_author(cur, year: int = None):
     print("Running wordcount per author")
@@ -329,7 +331,7 @@ if __name__ == '__main__':
     # Let's calculate stats
     # --- Just works
     # select_all(sqlite_cursor)  # Testing
-    # calc_total_wc_read(sqlite_cursor, year=2022)
+    calc_total_wc_read(sqlite_cursor, year=2022)
     # select_biggest_works(sqlite_cursor, year=2022)
 
     # --- Just fandoms
@@ -337,7 +339,7 @@ if __name__ == '__main__':
 
     # --- Works AND fandoms
     calc_wc_and_works_per_fandom(sqlite_cursor, year=2022)
-    # select_first_fic_per_fandom(sqlite_cursor, year=2022)
+    select_first_fic_per_fandom_wc(sqlite_cursor, year=2022)
 
     # --- Works AND authors
     # calc_wc_per_author(sqlite_cursor, year=2022)

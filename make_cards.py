@@ -1,8 +1,11 @@
+import datetime
+
 from html2image import Html2Image
 from mako.template import Template
 from mako.exceptions import RichTraceback
 
-from sqlite_stats import setup_sqlite, calc_wc_and_works_per_fandom, calc_wc_per_author, calc_works_per_author
+from sqlite_stats import setup_sqlite, calc_wc_and_works_per_fandom, calc_wc_per_author, calc_works_per_author, \
+    select_first_fic_per_fandom_wc
 
 
 # Testing-related things. TODO move out to a testing folder?
@@ -55,7 +58,7 @@ def make_top_5_fandom_card(image_name):
 
     # Make the details for the template
     title = "Your Biggest Fandoms"
-    title_flavor = "Once you went in, there was no coming back."
+    title_flavor = "Once you went in, there was no coming back"
     subheading = "— AO3 YEAR-IN-REVIEW —"
     ranked_items = []
     for row in top_five_rows:
@@ -96,7 +99,7 @@ def make_top_5_authors_wc_card(image_name):
 
     # Make the details for the template
     title = "Most-Read Authors"
-    title_flavor = "You committed to the long haul."
+    title_flavor = "You committed to the long haul"
     subheading = "— AO3 YEAR-IN-REVIEW —"
     ranked_items = []
     for row in top_rows:
@@ -136,7 +139,7 @@ def make_top_5_authors_count_card(image_name):
 
     # Make the details for the template
     title = "Most-Read Authors"
-    title_flavor = "You followed their pen and paper closely, like a detective."
+    title_flavor = "You followed their pen and paper closely, like a detective"
     subheading = "— AO3 YEAR-IN-REVIEW —"
     ranked_items = []
     for row in top_rows:
@@ -165,6 +168,51 @@ def make_top_5_authors_count_card(image_name):
     export_html_as_image(html=rendered_template, image_name=image_name)
     print("Done")
 
+def make_first_fic_of_top_5_fandoms(image_name):
+    # Get stats
+    con, cur = setup_sqlite()
+    top_rows = select_first_fic_per_fandom_wc(cur, year=2022)  # a tuple
+
+    # Compute just the top five from all the rows we got back
+    top_five_rows = get_top_five_from_prefix(top_rows)
+
+    # Make the details for the template
+    title = "Big Fandoms: What and When"
+    title_flavor = "The devouring of a fandom begins with a single step"
+    subheading = "— AO3 YEAR-IN-REVIEW —"
+    ranked_items = []
+    for row in top_five_rows:
+        fandom_name = row[0]
+        date_bookmarked_epoch_ms = row[1]
+        date_bookmarked = datetime.datetime.fromtimestamp(date_bookmarked_epoch_ms)
+        date_bookmarked_template_var = date_bookmarked.strftime("%b %d")
+        work_title = row[4]
+        # work_id = row[5]  # Only needed if cards were interactive, so we can rebuild the url
+        author_id = row[6]
+
+        details_template = "{} - \"" + work_title + "\" by {}"
+
+        # See top_5.html opt_vars for more info
+        details_template_vars = [date_bookmarked_template_var, author_id]
+        ranked_items.append({'name': fandom_name,
+                             'details_template': details_template,
+                             'details_template_vars': details_template_vars})
+
+    # Make the mako template
+    rendered_template = render_mako_template(template_file_name="card_templates/top_5.html",
+                                             template_args={"title": title,
+                                                            "title_flavor": title_flavor,
+                                                            "subheading": subheading,
+                                                            "ranked_items": ranked_items})
+
+    # Write out the HTML to a test file. This is really just for testing CSS quickly in-browser
+    # TODO test code, flesh out test folder with it...?
+    with open('card_templates/test.html', 'w') as f:
+        f.write(rendered_template)
+
+    # Capture HTML to a jpg into our card_output folder
+    export_html_as_image(html=rendered_template, image_name=image_name)
+    print("Done")
 
 # Card-making helpers - usually for odd edge cases
 def get_top_five_from_prefix(rows):
@@ -233,7 +281,9 @@ def get_top_five_active(rows):
             top_5.append(row)
     return top_5
 
+
 if __name__ == '__main__':
     make_top_5_fandom_card(image_name='top_5_fandoms.jpg')
     make_top_5_authors_wc_card(image_name='top_5_authors_wc.jpg')
     make_top_5_authors_count_card(image_name='top_5_authors_works.jpg')
+    make_first_fic_of_top_5_fandoms(image_name='top_5_fandoms_first_fic.jpg')
