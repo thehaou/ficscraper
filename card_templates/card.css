@@ -47,47 +47,135 @@
     --electronic-code-date-font: Monaco; /* maybe courier? */
 }
 
+body {
+    /* Where our whole card is defined.*/
+
+    /* Size */
+    /* Specifically the total size of our card. */
+    width: 360px;
+    height: 640px;
+
+    /* Positioning */
+    /* We want header, body (meat), and footer to be stacked vertically, edge-to-edge */
+    display: flex;
+    flex-direction: column;
+
+    /* Colors */
+    /* Default for the card is gray-on-white text */
+    background-color: var(--ao3-misc-grey-1);
+    color: var(--ao3-dark-grey);
+}
+
 .statistic_header {
+    /* The header contains the title label of whatever stat we created. */
+    /* Size */
+    width: 360px;
+    height: 60px;
+
     /* Positioning */
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    align-items: center;
 
     /* Colors */
     background-color: var(--ao3-misc-red-1);
     color: var(--ao3-white);
+
+    /* Text */
+    font-size: 24px;
 }
 
-body {
+.meat_block {
+    /* The meat of the card (really, the body) contains the stats.
+     * The sub-containers are ranking elements; we want them to be spaced out a bit.
+     */
     /* Size */
     width: 360px;
-    height: 640px;
+    height: 550px;
+
+    /* Positioning */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+}
+
+.list_block {
+    /* Container for a ranked element's row */
+    /* Positioning */
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.list-left {
+    /* Stuff on the left side of the row, like ranking # / other graphics */
+
+}
+
+.list_rank {
+    /* The cool iconography used to hold the ranking # */
+    /* Size */
+    width: 50px;
+    height: 50px;
+    transform: rotate(45deg);
+
+    /* Position */
+    /* We want the text to be centered */
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+    /* Color */
+    color: var(--ao3-white);
+    background-image: linear-gradient(to bottom right, var(--ao3-red), var(--ao3-misc-red-4));
+}
+
+.list_rank_text {
+    transform: rotate(-45deg);
+}
+
+.list-right {
+    /* Size */
+    width: 200px;
 
     /* Positioning */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    align-items: flext-start;
 
-    /* Colors */
-    background-color: var(--ao3-white);
-    color: var(--ao3-dark-grey);
+    /* Color */
+    background-color: #EEEEEE;
 }
 
-.footer {
+.list_header {
+    /* Fancy name of the element */
+    /* Text */
+    font-size: 24px;
+}
+
+.list_details {
+    /* Short blurb of the element */
+    /* Text */
+    font-size: 16px;
+}
+
+.card_footer {
+    /* The card's disclaimer & link back to this code.*/
+    /* Size */
+    width: 360px;
+    height: 30px;
+
     /* Positioning */
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: flex-end;
 
     /* Colors */
     background-color: var(--ao3-misc-red-1);
     color: var(--ao3-white);
-}
-
-.list_header {
-    font-size: 12px;
-}
-
-.list_details {
-    font-size: 10px;
 }
 
 .new {
@@ -104,3 +192,75 @@ body {
     font-family: var(--electronic-body-font);
     font-size: 8px;
 }
+
+/* Icons - ratings, warnings, relationships */
+/* Grabbed straight out of AO3's site_screen.css file */
+.blurb ul.required-tags li span {
+    display:block;
+    width:25px;
+    height:25px;
+    margin-top:0;
+    margin-bottom:0;
+    padding-left:0
+}
+
+.required-tags .rating-general-audience {
+    background:url(/images/imageset.png) -50px -25px;
+}
+.required-tags .rating-explicit {
+    background:url(/images/imageset.png) -25px -25px;
+    }
+.required-tags .rating-mature {
+    background:url(/images/imageset.png) -75px -25px;
+    }
+.required-tags .rating-notrated,.required-tags .category-none,.required-tags .warning-no,.status .count {
+    background:url(/images/imageset.png) -150px 0;
+    }
+.required-tags .rating-teen {
+    background:url(/images/imageset.png) 0 -25px;
+    }
+.required-tags .category-femslash {
+    background:url(/images/imageset.png) -25px 0;
+    }
+.required-tags .category-gen {
+    background:url(/images/imageset.png) -50px 0;
+    }
+.required-tags .category-slash {
+    background:url(/images/imageset.png) 0 0;
+    }
+.required-tags .category-het {
+    background:url(/images/imageset.png) -75px 0;
+    }
+.required-tags .category-multi {
+    background:url(/images/imageset.png) -100px -0;
+    }
+.required-tags .category-other {
+    background:url(/images/imageset.png) -125px 0;
+    }
+.required-tags .complete-no {
+    background:url(/images/imageset.png) -100px -25px;
+    }
+.required-tags .complete-yes {
+    background:url(/images/imageset.png) -175px -25px;
+    }
+.required-tags .warning-yes {
+    background:url(/images/imageset.png) -150px -25px;
+    }
+.required-tags .warning-choosenotto {
+    background:url(/images/imageset.png) -125px -25px;
+    }
+.required-tags .external-work {
+    background:url(/images/imageset.png) -75px -50px;
+    }
+.status .private .text {
+    background:url(/images/imageset.png) -175px -50px;
+    }
+.status .public {
+    background:url(/images/imageset.png) -125px -50px;
+    }
+.status .hidden {
+    background:url(/images/imageset.png) -150px -50px;
+    }
+.status .rec {
+    background:url(/images/imageset.png) -100px -50px;
+    }

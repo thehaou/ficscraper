@@ -7,16 +7,27 @@
 </head>
 <body>
     <!-- name of card goes here -->
-    <div class="statistic_header">Top Fandoms</div>
+    <div class="statistic_header">${title}</div>
 
     <!-- Then we put in some stats -->
-    % for item in items:
-        <div class="list_header">${item['name']}</div>
-        <div class="list_details">${item['details']}</div>
+    <div class="meat_block">
+    % for index, item in enumerate(ranked_items):
+        <div class="list_block">
+            <div class="list-left">
+                <div class="list_rank">
+                    <p class="list_rank_text">${index + 1}</p>
+                </div>
+            </div>
+            <div class="list-right">
+                <div class="list_header">${item['name']}</div>
+                <div class="list_details">${item['details']}</div>
+            </div>
+        </div>
     % endfor
+    </div>
 
     <!-- Then the bottom card -->
-    <div class="footer">
+    <div class="card_footer">
         <div class="disclaimer">Disclaimer: Not an official OTW product.</div>
         <div class="github_link">https://github.com/thehaou/ficscraper</div>
     </div>
