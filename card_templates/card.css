@@ -49,7 +49,6 @@
 
 body {
     /* Where our whole card is defined.*/
-
     /* Size */
     /* Specifically the total size of our card. */
     width: 360px;
@@ -59,6 +58,11 @@ body {
     /* We want header, body (meat), and footer to be stacked vertically, edge-to-edge */
     display: flex;
     flex-direction: column;
+    margin: 0px;
+    padding: 0px;
+
+    /* Text */
+    font-family: var(--electronic-body-font);
 
     /* Colors */
     /* Default for the card is gray-on-white text */
@@ -82,7 +86,7 @@ body {
     color: var(--ao3-white);
 
     /* Text */
-    font-size: 24px;
+    font-size: 22px;
 }
 
 .meat_block {
@@ -104,14 +108,14 @@ body {
     /* Positioning */
     display: flex;
     flex-direction: row;
-    justify-content: space-evenly;
+    justify-content: center;
     padding-top: 20px;
     padding-bottom: 20px;
 }
 
 .list-left {
     /* Stuff on the left side of the row, like ranking # / other graphics */
-
+    padding-right: 20px;
 }
 
 .list_rank {
@@ -138,7 +142,7 @@ body {
 
 .list-right {
     /* Size */
-    width: 200px;
+    width: 210px;
 
     /* Positioning */
     display: flex;
@@ -153,13 +157,25 @@ body {
 .list_header {
     /* Fancy name of the element */
     /* Text */
-    font-size: 24px;
+    font-size: 16px;
+    text-decoration: underline;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .list_details {
     /* Short blurb of the element */
     /* Text */
-    font-size: 16px;
+    font-size: 13px;
+}
+
+.detail-highlight {
+    /* Text */
+    font-weight: bold;
+
+    /* Color */
+    color: var(--ao3-misc-red-1);
 }
 
 .card_footer {
@@ -179,17 +195,26 @@ body {
 }
 
 .new {
+    /* Color */
     background-color: var(--ao3-system-blue-background);
     border-color: var(--ao3-system-blue-border);
 }
 
 .disclaimer {
-    font-family: var(--electronic-body-font);
+    /* Position */
+    padding-left: 3px;
+    padding-bottom: 3px;
+
+    /* Text */
     font-size: 8px;
 }
 
 .github_link {
-    font-family: var(--electronic-body-font);
+    /* Position */
+    padding-right: 3px;
+    padding-bottom: 3px;
+
+    /* Text */
     font-size: 8px;
 }
 

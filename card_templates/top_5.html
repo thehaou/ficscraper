@@ -20,7 +20,16 @@
             </div>
             <div class="list-right">
                 <div class="list_header">${item['name']}</div>
-                <div class="list_details">${item['details']}</div>
+                <%
+                    template = item['details_template']
+                    opt_vars = item.get('details_template_vars')
+                    if opt_vars:
+                        # We need to add some tags around the places we should be templating... ooh.
+                        template = template.replace('{', '<span class="detail-highlight">{')
+                        template = template.replace('}', '}</span>')
+                    formatted_details = template.format(*opt_vars)
+                %>
+                <div class="list_details">${formatted_details}</div>
             </div>
         </div>
     % endfor

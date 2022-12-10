@@ -8,6 +8,10 @@ def setup_sqlite():
 
     # Get a cursor so we can execute SQL
     cur = con.cursor()
+    return con, cur
+
+def drop_and_setup_sqlite():
+    con, cur = setup_sqlite()
 
     # Create tables for works first
     drop_query = """
@@ -235,7 +239,7 @@ def calc_most_per_fandom(cur):
     for r in rows:
         print(r)
 
-def calc_wc_per_fandom(cur, year: int = None):
+def calc_wc_and_works_per_fandom(cur, year: int = None):
     print("Running wordcount per fandom")
     date_where = ''
     if year:
@@ -243,7 +247,7 @@ def calc_wc_per_fandom(cur, year: int = None):
         date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
 
     calc_query = """
-    SELECT fandoms.fandom_name, SUM(works.word_count) as total_wc
+    SELECT fandoms.fandom_name, SUM(works.word_count) as total_wc, COUNT(works.work_id) as num_works
     FROM works
     INNER JOIN fandoms ON works.work_id = fandoms.work_id
     {date_where}    
@@ -251,8 +255,9 @@ def calc_wc_per_fandom(cur, year: int = None):
     ORDER BY total_wc DESC
     """.format(date_where=date_where)
     rows = cur.execute(calc_query).fetchall()
-    for r in rows:
-        print(r)
+    # for r in rows:
+    #     print(r)
+    return rows
 
 def select_first_fic_per_fandom(cur, year: int = None):
     print("Running first fic per fandom")
@@ -294,7 +299,7 @@ def calc_wc_per_author(cur, year: int = None):
 
 if __name__ == '__main__':
     # Setup
-    sql_connection, sqlite_cursor = setup_sqlite()
+    sql_connection, sqlite_cursor = drop_and_setup_sqlite()
     import_works_csv(sqlite_cursor)
     import_fandoms_csv(sqlite_cursor)
     import_authors_csv(sqlite_cursor)
@@ -309,8 +314,8 @@ if __name__ == '__main__':
     # calc_most_per_fandom(sqlite_cursor)
 
     # --- Works AND fandoms
-    # calc_wc_per_fandom(sqlite_cursor, year=2022)
-    select_first_fic_per_fandom(sqlite_cursor, year=2022)
+    calc_wc_and_works_per_fandom(sqlite_cursor, year=2022)
+    # select_first_fic_per_fandom(sqlite_cursor, year=2022)
 
     # --- Works AND authors
     # calc_wc_per_author(sqlite_cursor, year=2022)
