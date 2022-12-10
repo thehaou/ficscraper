@@ -7,7 +7,15 @@
 </head>
 <body>
     <!-- name of card goes here -->
-    <div class="statistic_header">${title}</div>
+    <div class="statistic">
+        %if subheading:
+        <div class="statistic_subheader">${subheading}</div>
+        %endif
+        <div class="statistic_header">${title}</div>
+        %if title_flavor:
+        <div class="statistic_header_flavor">${title_flavor}</div>
+        %endif
+    </div>
 
     <!-- Then we put in some stats -->
     <div class="meat_block">

@@ -286,6 +286,26 @@ def calc_wc_per_author(cur, year: int = None):
         date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
 
     calc_query = """
+    SELECT authors.author_id, SUM(works.word_count) as total_wc
+    FROM works
+    INNER JOIN authors ON works.work_id = authors.work_id
+    {date_where}    
+    GROUP BY authors.author_id
+    ORDER BY total_wc DESC
+    """.format(date_where=date_where)
+    rows = cur.execute(calc_query).fetchall()
+    # for r in rows:
+    #     print(r)
+    return rows
+
+def calc_works_per_author(cur, year: int = None):
+    print("Running works per author")
+    date_where = ''
+    if year:
+        epoch = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch}'.format(epoch=epoch)
+
+    calc_query = """
     SELECT authors.author_id, COUNT(works.work_id) as total_wc
     FROM works
     INNER JOIN authors ON works.work_id = authors.work_id
@@ -294,8 +314,10 @@ def calc_wc_per_author(cur, year: int = None):
     ORDER BY total_wc DESC
     """.format(date_where=date_where)
     rows = cur.execute(calc_query).fetchall()
-    for r in rows:
-        print(r)
+    # for r in rows:
+    #     print(r)
+    return rows
+
 
 if __name__ == '__main__':
     # Setup
@@ -319,6 +341,7 @@ if __name__ == '__main__':
 
     # --- Works AND authors
     # calc_wc_per_author(sqlite_cursor, year=2022)
+    # calc_works_per_author(sqlite_cursor, year=2022)
 
     # Cleanup
     sql_connection.commit()
