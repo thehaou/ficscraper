@@ -1,7 +1,9 @@
 <p align="center">
-# 🚢📚🔖 ficscraper ✍💬❤️ 
-[How it works](#-supported-fanfiction-websites) • [System requirements](#-requirements) • [AO3 Year-In-Review](#-) • [Roadmap](#-roadmap)
+ <h1>🚢📚🔖 ficscraper ✍💬❤️</h1>
 </p>
+[How it works](#-supported-fanfiction-websites) • [System requirements](#-requirements) • [AO3 Year-In-Review](#-) • [Roadmap](#-roadmap)
+
+---
 
 The goal of `ficscraper` is to provide fanfiction readers with a way to generate & interpret stats on their reading habits on websites that provide none. For example:
 
@@ -20,9 +22,9 @@ Other fanfiction websites such as [FanFiction.net](https://www.fanfiction.net/) 
 ## Functionality
 `ficscraper` works in three stages:
 1. **Extract** user's interactions with fic, such as:
-   1. reading history (when did I 
+   1. reading history
    2. kudos history
-   3. personal bookmarks
+   3. personal bookmarks & tags
 2. **Transfer & load** the collected information into SQLite, an extremely handy no-installation-needed/in-memory/embedded database management system.
    1. One could actually stop at this stage if they want to begin running stats on their interactions. See here (TODO) for example queries you can run against SQLite. For users unfamiliar with Python or coding in general, see here (TODO) for a detailed walkthrough on how to get some popular types of stats.
 3. **Visualize** certain types of interactions into something nicely readable for humans (and can be shared)!
@@ -59,6 +61,17 @@ As such, this will continue to be updated whenever I a) feel the urge b) have th
 
 Fanfiction itself is a labor of love and I genuinely hope that `ficscraper` can provide you with some interesting ways to investigate your own personal relationship with it.
 
+### More card templates for AO3 Year-In-Review 
+1. Big stat template (eg. total wordcount)
+2. Reading personality (5 letters, 10 values, slider representation, different CSS border per result) (ex: multichap/longfic/angst/fandom-loyal/multiship)
+3. E/M/T/G/unknown %s
+4. Ship-slash (color by ship type)
+5. Your Ideal Work (based on tags of fics - requires having tags on fics, though, which is MASSIVE - how to structure??)
+6. Timeline of when you got into a fandom throughout the year
+7. Bucket template (eg. 0k-2k, 2k-20k, 2k-200k, 200k+)
+
+### Support for ingesting User History
+
 ### Support for figuring out just how far behind you are on subscriptions
 History politely tells you when you last visited a fic, and whether or not the fic has been updated since. The Chapter Index for a work (https://archiveofourown.org/works/<work_id>/navigate) tells you exactly when a chapter was uploaded.
 
@@ -68,6 +81,11 @@ My personal goal for calculating this stat would be getting this exported visual
 
 Some pitfalls: AO3 tells you when you last visited; it doesn't tell you when you first subscribed. This stat generation is reliant on you NOT visiting a fic since you subscribed, and once you DO visit again, you read all the way to the most recent chapter.
 
+### Support for ingesting User Collections
+TODO
+
+### Support for stats for fanfic writers
+TODO
 
 ## Contact Info
 I'd prefer if discussion was kept to the Discussions tab, but if for some reason you need to contact me directly, my Discord tag is `thehaou#5166`.
