@@ -1,5 +1,5 @@
 # 🚢📚🔖 ficscraper ✍💬❤️
-[How it works](#supported-fanfiction-websites) • [System requirements](#requirements) • [AO3 Year-In-Review]() • [Roadmap](#-roadmap)
+[How it works](#supported-fanfiction-websites) • [System requirements](#requirements) • [AO3 Year-In-Review]() • [Roadmap](#roadmap)
 
 ---
 
