@@ -1,7 +1,5 @@
-<p align="center">
- <h1>🚢📚🔖 ficscraper ✍💬❤️</h1>
-</p>
-[How it works](#-supported-fanfiction-websites) • [System requirements](#-requirements) • [AO3 Year-In-Review](#-) • [Roadmap](#-roadmap)
+# 🚢📚🔖 ficscraper ✍💬❤️
+[How it works](#supported-fanfiction-websites) • [System requirements](#requirements) • [AO3 Year-In-Review]() • [Roadmap](#-roadmap)
 
 ---
 
@@ -71,6 +69,7 @@ Fanfiction itself is a labor of love and I genuinely hope that `ficscraper` can 
 7. Bucket template (eg. 0k-2k, 2k-20k, 2k-200k, 200k+)
 
 ### Support for ingesting User History
+TODO
 
 ### Support for figuring out just how far behind you are on subscriptions
 History politely tells you when you last visited a fic, and whether or not the fic has been updated since. The Chapter Index for a work (https://archiveofourown.org/works/<work_id>/navigate) tells you exactly when a chapter was uploaded.
