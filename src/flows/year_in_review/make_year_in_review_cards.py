@@ -8,7 +8,7 @@ from sqlite_stats import setup_sqlite, calc_wc_and_works_per_fandom, calc_wc_per
     select_first_fic_per_fandom_wc, select_biggest_works
 
 """
-This file generates some stats one might find interesting for a year-in-review. Cards are outputted to the /card_output
+This file generates some stats one might find interesting for a year-in-review. Cards are outputted to the /cards
 directory in JPG format.
 
 Cards generated right now are:
@@ -54,7 +54,7 @@ def render_mako_template(template_file_name: str, template_args: dict):
 
 
 def export_html_as_image(html: str, image_name='test.jpg'):
-    hti = Html2Image(output_path="card_output",
+    hti = Html2Image(output_path="cards",
                      size=(360, 640))  # size: (width, height)
 
     print("Screenshotting...")
@@ -101,7 +101,7 @@ def make_top_5_fandom_card(image_name):
     with open('card_templates/test.html', 'w') as f:
         f.write(rendered_template)
 
-    # Capture HTML to a jpg into our card_output folder
+    # Capture HTML to a jpg into our cards folder
     export_html_as_image(html=rendered_template, image_name=image_name)
     print("Done")
 
@@ -140,7 +140,7 @@ def make_top_5_authors_wc_card(image_name):
     with open('card_templates/test.html', 'w') as f:
         f.write(rendered_template)
 
-    # Capture HTML to a jpg into our card_output folder
+    # Capture HTML to a jpg into our cards folder
     export_html_as_image(html=rendered_template, image_name=image_name)
     print("Done")
 
@@ -179,7 +179,7 @@ def make_top_5_authors_count_card(image_name):
     with open('card_templates/test.html', 'w') as f:
         f.write(rendered_template)
 
-    # Capture HTML to a jpg into our card_output folder
+    # Capture HTML to a jpg into our cards folder
     export_html_as_image(html=rendered_template, image_name=image_name)
     print("Done")
 
@@ -229,7 +229,7 @@ def make_first_fic_of_top_5_fandoms(image_name):
     with open('card_templates/test.html', 'w') as f:
         f.write(rendered_template)
 
-    # Capture HTML to a jpg into our card_output folder
+    # Capture HTML to a jpg into our cards folder
     export_html_as_image(html=rendered_template, image_name=image_name)
     print("Done")
 
@@ -271,7 +271,7 @@ def make_top_5_longest_works_card(image_name):
     with open('card_templates/test.html', 'w') as f:
         f.write(rendered_template)
 
-    # Capture HTML to a jpg into our card_output folder
+    # Capture HTML to a jpg into our cards folder
     export_html_as_image(html=rendered_template, image_name=image_name)
     print("Done")
 

@@ -68,14 +68,14 @@ def drop_and_setup_sqlite():
 
 def import_authors_csv(cur):
     # Clean CSV - move this out to another step
-    df = pd.read_csv('csv_output/authors.csv')
+    df = pd.read_csv('csvs/authors.csvs')
     df.drop_duplicates(inplace=True)
-    df.to_csv('csv_output/authors_deduped.csv', index=False)
+    df.to_csv('csvs/authors_deduped.csvs', index=False)
 
-    with open('csv_output/authors_deduped.csv', 'r') as f:
+    with open('csvs/authors_deduped.csvs', 'r') as f:
         # # Real fast, need to find dupe ids
         # work_ids = {}
-        # contents = csv.reader(f)
+        # contents = csvs.reader(f)
         # headers = next(contents)  # Skip headers
         # dupes = []
         # for row in contents:
@@ -107,14 +107,14 @@ def import_authors_csv(cur):
 
 def import_fandoms_csv(cur):
     # Clean CSV - move this out to another step
-    df = pd.read_csv('csv_output/fandoms.csv')
+    df = pd.read_csv('csvs/fandoms.csvs')
     df.drop_duplicates(inplace=True)
-    df.to_csv('csv_output/fandoms_deduped.csv', index=False)
+    df.to_csv('csvs/fandoms_deduped.csvs', index=False)
 
-    with open('csv_output/fandoms_deduped.csv', 'r') as f:
+    with open('csvs/fandoms_deduped.csvs', 'r') as f:
         # # Real fast, need to find dupe ids
         # work_ids = {}
-        # contents = csv.reader(f)
+        # contents = csvs.reader(f)
         # headers = next(contents)  # Skip headers
         # dupes = []
         # for row in contents:
@@ -144,14 +144,14 @@ def import_fandoms_csv(cur):
 
 def import_works_csv(cur):
     # Clean CSV - move this out to another step
-    df = pd.read_csv('csv_output/works.csv')
+    df = pd.read_csv('csvs/works.csvs')
     df.drop_duplicates(inplace=True)
-    df.to_csv('csv_output/works_deduped.csv', index=False)
+    df.to_csv('csvs/works_deduped.csvs', index=False)
 
-    with open('csv_output/works_deduped.csv', 'r') as f:
+    with open('csvs/works_deduped.csvs', 'r') as f:
         # # Real fast, need to find dupe ids
         # work_ids = {}
-        # contents = csv.reader(f)
+        # contents = csvs.reader(f)
         # headers = next(contents)  # Skip headers
         # dupes = []
         # for row in contents:
