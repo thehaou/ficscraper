@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     # Convert to CSV here?
     for fics_data_kind in fics_dict.keys():
-        with open('csv_output/{}.csv'.format(fics_data_kind), 'w') as f:
+        with open('csvs/{}.csvs'.format(fics_data_kind), 'w') as f:
             write = csv.writer(f)
             # First write headers
             write.writerow(fics_dict[fics_data_kind][0].get_csv_headers())
