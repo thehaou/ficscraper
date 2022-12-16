@@ -8,85 +8,9 @@ from time import strptime
 from time import mktime
 from time import sleep
 from bs4 import BeautifulSoup
-from enum import Enum
 
-from postgresql.AO3OtherTagRow import AO3OtherTagRow
-from postgresql.AO3SeriesRow import AO3SeriesRow
-from postgresql.AO3WarningRow import AO3WarningRow
-from postgresql.AuthorRow import AuthorRow
-from postgresql.CharacterRow import CharacterRow
-from postgresql.FandomRow import FandomRow
-from postgresql.WorkRow import WorkRow
-
-
-class ArchiveWarning(Enum):
-    # First, the audience rating (upper left square)
-    NR = 'Not Rated'
-    G = 'General Audiences'
-    T = 'Teen And Up Audiences'
-    M = 'Mature'
-    E = 'Explicit'
-
-    # Next, archive warnings (bottom left square)
-    CCNTUAW = 'Choose Not To Use Archive Warnings'
-    NAWA = 'No Archive Warnings Apply'
-    GDOV = 'Graphic Depictions Of Violence'
-    MCD = 'Major Character Death'
-    RNC = 'Rape/Non-Con'
-    U = 'Underage'
-
-    # Then relationship types (upper right square)
-    GEN = 'Gen'
-    MM = 'M/M'
-    FF = 'F/F'
-    FM = 'F/M'
-    MULTI = 'Multi'
-    OTHER = 'Other'
-    NC = 'No category'
-
-    # And finally, completion status (bottom right square)
-    CW = 'Complete Work'
-    SIP = 'Series in Progress'
-    WIP = 'Work in Progress'
-
-    @classmethod
-    def get_name_from_value(cls, value):
-        for item in cls:
-            if value == item.value:
-                return item
-        return None
-
-
-def get_quadrant(enum_set):
-    audience_rating = {ArchiveWarning.NR, ArchiveWarning.G, ArchiveWarning.T, ArchiveWarning.M, ArchiveWarning.E}
-    content_rating = {ArchiveWarning.CCNTUAW, ArchiveWarning.NAWA, ArchiveWarning.GDOV, ArchiveWarning.MCD,
-                      ArchiveWarning.RNC, ArchiveWarning.U}
-    relationship_type = {ArchiveWarning.GEN, ArchiveWarning.MM, ArchiveWarning.FF, ArchiveWarning.FM,
-                         ArchiveWarning.MULTI, ArchiveWarning.OTHER, ArchiveWarning.NC}
-    completion_status = {ArchiveWarning.CW, ArchiveWarning.SIP, ArchiveWarning.WIP}
-
-    ar = audience_rating.intersection(enum_set)
-    cr = content_rating.intersection(enum_set)
-    rt = relationship_type.intersection(enum_set)
-    cs = completion_status.intersection(enum_set)
-
-    if len(ar) != 1 or len(cs) != 1:
-        error_and_quit('need exactly one of each of these quadrants', enum_set)
-
-    # There can be multiple here, for example, 'Gen, Multi' is a valid text
-    if len(cr) == 0 or len(rt) == 0:
-        error_and_quit('need at least one of each of these quadrants', enum_set)
-
-    is_complete = False
-    if cs.pop() is ArchiveWarning.CW:
-        is_complete = True
-
-    # Special case: if the audience warning is 'Not Rated', this is basically null
-    ar_popped = ar.pop()
-    if ar_popped is ArchiveWarning.NR:
-        ar_popped = None
-
-    return ar_popped, list(set(cr)), list(set(rt)), is_complete
+from src.scrapers.ao3.ArchiveWarningsUtils import get_quadrant, ArchiveWarning
+import src.scrapers.ao3.constants as constants
 
 
 def error_and_quit(error_msg, input_string=""):
@@ -97,17 +21,15 @@ def error_and_quit(error_msg, input_string=""):
 
 class AO3Scraper:
     def __init__(self, username, password):
-        self._log_prefix = 'ao3 '
         self._username = username
         self._password = password
-        self._bookmarks_url_template = 'https://archiveofourown.org/users/%s/bookmarks?page=%%d'
-        self._works_subscriptions_url_template = 'https://archiveofourown.org/users/%s/subscriptions?type=works'
-        self._series_subscriptions_url_template = 'https://archiveofourown.org/users/%s/subscriptions?type=series'
-        self._homepage_url = 'https://archiveofourown.org'
-        self._login_url = 'https://archiveofourown.org/users/login'
+        self._bookmarks_url_template = constants.bookmarks_url_template
+        self._works_subscriptions_url_template = constants.works_subscriptions_url_template
+        self._series_subscriptions_url_template = constants.series_subscriptions_url_template
+        self._homepage_url = constants.homepage_url
+        self._login_url = constants.login_url
 
-
-        # set up active session for ao3 - this section is based off of
+        # Set up active session for AO3. This section is based off of
         # https://github.com/alexwlchan/ao3/blob/master/src/ao3/users.py
         sess = requests.Session()
         req = sess.get(self._homepage_url)
@@ -117,7 +39,7 @@ class AO3Scraper:
         logging.debug('auth token is ' + str(authenticity_token))
 
         req = sess.post(self._login_url, params={
-            'authenticity_token': authenticity_token, # csrf token
+            'authenticity_token': authenticity_token,  # csrf token
             'user[login]': self._username,
             'user[password]': self._password,
             'commit': 'Log in'
@@ -130,27 +52,27 @@ class AO3Scraper:
         self._sess = sess
         logging.debug('AO3 session set up')
 
-    # Also from # https://github.com/alexwlchan/ao3/blob/master/src/ao3/users.py
     def __repr__(self):
-        return '%s(username=%r)' % (type(self).__name__, self.username)
+        # This line is directly from # https://github.com/alexwlchan/ao3/blob/master/src/ao3/users.py
+        return '%s(username=%r)' % (type(self).__name__, self._username)
 
     def grab_pages(self):
         # Happily AO3 starts returning blank results if you exceed the max page
         api_url = (self._bookmarks_url_template % self._username)
 
         # UNCOMMENT FOR TESTING: only fetch n number of patches (I have 100+, which isn't feasible for quick testing)
-        # page_count_limit = 2
+        page_count_limit = 2
         # END UNCOMMENT SECTION
 
         pages = []
         for page_num in itertools.count(start=1):
             # UNCOMMENT FOR TESTING
-            # page_count_limit -= 1
-            # if page_count_limit == 0:
-            #     break
+            page_count_limit -= 1
+            if page_count_limit == 0:
+                break
             # END UNCOMMENT SECTION
 
-            logging.info(self._log_prefix + 'searching on page ' + str(page_num))
+            logging.info('searching on page ' + str(page_num))
 
             while True:
                 req = self._sess.get(api_url % page_num)
@@ -180,7 +102,7 @@ class AO3Scraper:
         return pages
 
     def process_bookmarks(self):
-        logging.info(self._log_prefix + 'Starting AO3')
+        logging.info('Starting AO3')
 
         website = 'Archive of Our Own'
         logging.info('\n')
@@ -199,7 +121,7 @@ class AO3Scraper:
         total_ao3_char_row_list = []
         for ol_tag in pages:
             # Bookkeeping
-            logging.info(self._log_prefix + 'parsing page ' + str(page_num))
+            logging.info('parsing page ' + str(page_num))
             page_num += 1
 
             # Set up lists
@@ -209,7 +131,7 @@ class AO3Scraper:
             archive_warning_row_list = []
             other_tag_row_list = []
             series_row_list = []
-            ao3_char_row_list = []
+            char_row_list = []
 
             # Scrape
             li_tags = ol_tag.findAll('li', attrs={'class': re.compile('^bookmark blurb group.*')})
@@ -217,7 +139,7 @@ class AO3Scraper:
                 word_count, released_chapters_count, total_chapters_count = self.process_stats(li_tag)
 
                 if word_count is None:
-                    logging.debug(self._log_prefix + 'This is a series bookmark, skipping')
+                    logging.debug('This is a series bookmark, skipping')
                     continue
 
                 work_id, title, author_id, author_name, fandoms, content_rating, archive_warnings, is_complete, \
@@ -230,67 +152,94 @@ class AO3Scraper:
                 publish_epoch_sec = None
 
                 characters, other_tags = self.process_tags(li_tag) # TOO MANY on page 3, e.g. https://archiveofourown.org/works/13111908/chapters/29997507
-                # characters = None
-                # other_tags = None
 
                 series_ids, series_names = self.process_series(li_tag)
-                # series_ids = None
-                # series_names = None
 
                 date_bookmarked, user_tags = self.process_user_bookmark(li_tag)
-                # user_tags = None
 
                 # Create postgresql entries
                 work_row_list.append(
-                    WorkRow(work_id, title, website, word_count, publish_epoch_sec, update_epoch_sec,
-                            released_chapters_count,
-                            total_chapters_count, user_tags, is_complete, content_rating, date_bookmarked))
+                    {
+                        "work_id": work_id,
+                        "title": title,
+                        "website": website,
+                        "word_count": word_count,
+                        "publish_epoch_sec": publish_epoch_sec,
+                        "update_epoch_sec": update_epoch_sec,
+                        "released_chapters_count": released_chapters_count,
+                        "total_chapters_count": total_chapters_count,
+                        "user_tags": user_tags,
+                        "is_complete": is_complete,
+                        "content_rating": content_rating,
+                        "date_bookmarked": date_bookmarked
+                    })
 
-                author_row_list.append(AuthorRow(work_id, author_id, author_name))
+                author_row_list.append({
+                    "work_id": work_id,
+                    "author_id": author_id,
+                    "author_name": author_name
+                })
 
                 if fandoms is not None:
                     for fandom_name in fandoms:
-                        fandom_row_list.append(FandomRow(work_id, fandom_name))
+                        fandom_row_list.append({
+                            "work_id": work_id,
+                            "fandom_name": fandom_name
+                        })
 
                 if archive_warnings is not None:
                     for archive_warning in archive_warnings:
-                        archive_warning_row_list.append(AO3WarningRow(work_id, archive_warning.value))
+                        archive_warning_row_list.append({
+                            "work_id": work_id,
+                            "warning": archive_warning.value
+                        })
 
                 if other_tags is not None:
                     for other_tag in other_tags:
-                        other_tag_row_list.append(AO3OtherTagRow(work_id, other_tag))
+                        other_tag_row_list.append({
+                            "work_id": work_id,
+                            "other_tag": other_tag
+                        })
 
                 if series_ids is not None:
                     for series_id, series_name in zip(series_ids, series_names):
-                        series_row_list.append(AO3SeriesRow(work_id, series_id, series_name))
+                        series_row_list.append({
+                            "work_id": work_id,
+                            "series_id": series_id,
+                            "series_name": series_name
+                        })
 
                 if characters is not None:
                     for character_name in characters:
-                        ao3_char_row_list.append(CharacterRow(work_id, character_name))
+                        char_row_list.append({
+                            "work_id": work_id,
+                            "character_name": character_name
+                        })
 
             # Dump them on the queue, per page
             if len(work_row_list) > 0:
-                logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' works on the queue')
+                logging.debug("pg{} - putting {} works on the queue".format(page_num, len(work_row_list)))
                 total_work_row_list.extend(work_row_list)
             if len(author_row_list) > 0:
-                logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' authors on the queue')
+                logging.debug("pg{} - putting {} authors on the queue".format(page_num, len(author_row_list)))
                 total_author_row_list.extend(author_row_list)
             if len(fandom_row_list) > 0:
-                logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' fandoms on the queue')
+                logging.debug("pg{} - putting {} fandoms on the queue".format(page_num, len(fandom_row_list)))
                 total_fandom_row_list.extend(fandom_row_list)
             if len(archive_warning_row_list) > 0:
-                logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' archive warnings on the queue')
+                logging.debug("pg{} - putting {} archive warnings on the queue".format(page_num,
+                                                                                       len(archive_warning_row_list)))
                 total_archive_warning_row_list.extend(archive_warning_row_list)
             if len(other_tag_row_list) > 0:
-                logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' other tags on the queue')
+                logging.debug("pg{} - putting {} other tags on the queue".format(page_num, len(other_tag_row_list)))
                 total_other_tag_row_list.extend(other_tag_row_list)
             if len(series_row_list) > 0:
-                logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' series on the queue')
+                logging.debug("pg{} - putting {} series on the queue".format(page_num, len(series_row_list)))
                 total_series_row_list.extend(series_row_list)
-            if len(ao3_char_row_list) > 0:
-                logging.debug(str(page_num) + ' putting ' + str(len(work_row_list)) + ' characters on the queue')
-                total_ao3_char_row_list.extend(ao3_char_row_list)
-        logging.info(self._log_prefix + 'Exiting AO3')
+            if len(char_row_list) > 0:
+                logging.debug("pg{} - putting {} characters on the queue".format(page_num, len(char_row_list)))
+                total_ao3_char_row_list.extend(char_row_list)
+        logging.info('Exiting AO3')
         return {
             "works": total_work_row_list,
             "authors": total_author_row_list,
@@ -305,7 +254,7 @@ class AO3Scraper:
         # logging.debug('processing header module')
         header_module = bookmark.find('div', class_='header module')
         if header_module is None:
-            error_and_quit(self._log_prefix + 'can\'t find header module class', bookmark)
+            error_and_quit('can\'t find header module class', bookmark)
 
         work_id, title, author_id, author_name = self.process_heading(header_module)
         fandoms = self.process_fandoms_heading(header_module)
@@ -319,7 +268,7 @@ class AO3Scraper:
         # logging.debug('processing process_heading module')
         heading = header_module.find('h4', class_='heading')
         if heading is None:
-            error_and_quit(self._log_prefix + 'can\'t find heading class', header_module)
+            error_and_quit('can\'t find heading class', header_module)
 
         # Some authors are listed as Anonymous, and thus, have no author profile to link to.
         # See https://archiveofourown.org/collections/anonymous for more details.
@@ -332,7 +281,7 @@ class AO3Scraper:
                 author_id = a_child.get('href').split('/')[2]
                 author_name = a_child.contents[0]
                 if author_id is None or author_name is None:
-                    error_and_quit(self._log_prefix + 'can\'t parse author info', a_child)
+                    error_and_quit('can\'t parse author info', a_child)
 
             else:
                 # Grab work info - however, works can be written for other people, we need to ignore hrefs with /users
@@ -341,7 +290,7 @@ class AO3Scraper:
                     work_id = a_child.get('href')[7:]
                     title = a_child.contents[0]
                     if work_id is None or title is None:
-                        error_and_quit(self._log_prefix + 'can\'t parse title info', a_child)
+                        error_and_quit('can\'t parse title info', a_child)
 
         return work_id, title, author_id, author_name
 
@@ -349,13 +298,13 @@ class AO3Scraper:
         # logging.debug('processing process_fandoms_heading module')
         fandoms_heading = header_module.find('h5', class_='fandoms heading')
         if fandoms_heading is None:
-            error_and_quit(self._log_prefix + 'can\'t find fandoms heading class', header_module)
+            error_and_quit('can\'t find fandoms heading class', header_module)
 
         fandoms = []
         for a_child in fandoms_heading.findAll('a'):
             fandom_name = a_child.contents[0]
             if fandom_name is None:
-                error_and_quit(self._log_prefix + 'can\'t parse fandom tag', header_module)
+                error_and_quit('can\'t parse fandom tag', header_module)
             fandoms.append(fandom_name)
 
         return fandoms
@@ -365,7 +314,7 @@ class AO3Scraper:
         found_tags = set()
         required_tags = header_module.find('ul', class_='required-tags')
         if required_tags is None:
-            error_and_quit(self._log_prefix + 'can\'t find required tags class', header_module)
+            error_and_quit('can\'t find required tags class', header_module)
             
         for tag in required_tags.findAll('span', class_='text'):
             tag_content_list = tag.contents[0].split(', ')
@@ -386,7 +335,7 @@ class AO3Scraper:
         # logging.debug('processing process_datetime module')
         datetime_child = header_module.find('p', class_='datetime')
         if datetime_child is None:
-            error_and_quit(self._log_prefix + 'can\'t find datetime class', header_module)
+            error_and_quit('can\'t find datetime class', header_module)
 
         dd_Month_YYYY = datetime_child.contents[0]
         struct_time = strptime(dd_Month_YYYY, "%d %b %Y")
@@ -405,13 +354,37 @@ class AO3Scraper:
             for character_child in characters.findAll('a'):
                 character_list.append(character_child.contents[0])
 
-        other_tags = tags.find('li', class_='freeforms')
+        other_tags = tags.findAll('li', class_='freeforms')
         other_tags_list = None
         # other_tag_last = tags.find('li', class_='freeforms last') # TODO should probably figure out if this is getting parsed or not
+        """
+        The issue with parsing all the extra tags is that they hyperlink to their verbatim tag url, and only THEN
+        do they get redirected if they're tag-wrangled. For example,
+        
+        In "Two Timing Touch And Broken Bones" (https://archiveofourown.org/works/38860611), ashiftiperson lovingly 
+        included the tag "no beta we die like men". bs4 sees the attached url like so...
+        
+            https://archiveofourown.org/tags/no%20beta%20we%20die%20like%20men/works
+        
+        ...which we can see is word-for-word the author's written tag, shoved into a URL.
+        
+        But what the tag URL ACTUALLY redirects to is:
+        
+            https://archiveofourown.org/tags/Not%20Beta%20Read/works
+        
+        This unfortunately means that there's no publicly-facing tag-id wrangled out that I can take advantage of.
+        Not sure if I will hit a massive bottleneck with rate-limiting if I try to visit every single tag page or not,
+        but when I allowed 1 second between clicks, I went 40 tag-follows without getting rate limited.
+        
+        TODO needs experimentation for following up tag URLs.
+        TODO also experiment with the couple-second delay on fetching pages?? Perhaps it's a rate-limit if they 
+        receive X # of requests in a VERY short time span such that it could ONLY be automated??
+        """
+
         if other_tags is not None:
             other_tags_list = []
             for other_tag in other_tags:
-                other_tags_list.append(other_tag.contents[0])
+                other_tags_list.append(other_tag.contents[0].contents[0])
 
         return character_list, other_tags_list
 
@@ -421,7 +394,11 @@ class AO3Scraper:
         if datetime_child is None:
             return None, None
 
-        logging.debug('This is a series, actual going through process_series')
+        logging.debug('This is a series, actually going through process_series')
+        """
+        TODO - we don't process series correctly at all; just the name and id of the series and nothing about the 
+        works in them.
+        """
         series_ids = []
         series_names = []
         for a_child in datetime_child.findAll('a'):
@@ -434,7 +411,7 @@ class AO3Scraper:
         # logging.debug('processing process_stats module')
         stats = bookmark.find('dl', class_='stats')
         if stats is None:
-            logging.info(self._log_prefix + 'This bookmark has probably been deleted, skipping it. Bookmark:')
+            logging.info('This bookmark has probably been deleted, skipping it. Bookmark:')
             logging.debug(bookmark)
             return None, None, None
 
@@ -442,7 +419,7 @@ class AO3Scraper:
         if word_count_child is None:
             # USUALLY word count has the class assigned to it, but then sometimes you get weird works like
             # https://archiveofourown.org/series/889014 which show up on bookmarks with no classes on their dd tags
-            logging.info(self._log_prefix + 'This bookmark is probably a series, skipping it. Bookmark:')
+            logging.info('This bookmark is probably a series, skipping it. Bookmark:')
             logging.debug(bookmark)
             return None, None, None
         word_count = re.sub(',', '', word_count_child.contents[0])
