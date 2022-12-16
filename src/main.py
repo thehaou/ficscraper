@@ -5,7 +5,7 @@ import sys
 import csv
 import configparser
 
-from scraper.AO3Scraper import AO3Scraper
+from scrapers.AO3Scraper import AO3Scraper
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG,  # Switch to logging.INFO for less output
