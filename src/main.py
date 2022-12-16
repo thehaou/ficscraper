@@ -5,9 +5,9 @@ import sys
 import csv
 import configparser
 
-from scrapers.AO3Scraper import AO3Scraper
-
 # Set up logging
+from src.scrapers.ao3.AO3Scraper import AO3Scraper
+
 logging.basicConfig(level=logging.DEBUG,  # Switch to logging.INFO for less output
                     # format=''
                     )
@@ -32,10 +32,10 @@ if __name__ == '__main__':
 
     # Convert to CSV here?
     for fics_data_kind in fics_dict.keys():
-        with open('csvs/{}.csvs'.format(fics_data_kind), 'w') as f:
+        with open('output/csvs/{}.csv'.format(fics_data_kind), 'w+') as f:
             write = csv.writer(f)
             # First write headers
-            write.writerow(fics_dict[fics_data_kind][0].get_csv_headers())
+            write.writerow(fics_dict[fics_data_kind][0].keys())
 
             # Then write all the entries
-            write.writerows([fic.get_csv_values() for fic in fics_dict[fics_data_kind]])
+            write.writerows([fic.values() for fic in fics_dict[fics_data_kind]])
