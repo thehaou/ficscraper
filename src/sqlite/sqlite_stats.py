@@ -3,195 +3,10 @@ import datetime
 import sqlite3
 import pandas as pd
 
-def setup_sqlite():
-    # Make a new db; open connection
-    con = sqlite3.connect("ao3_yir.db")
+from sqlite.utils_import_csv import import_works_csv, import_fandoms_csv, import_authors_csv, import_warnings_csv, \
+    import_work_tags, import_wrangled_work_tags
+from sqlite.utils_sqlite import setup_sqlite_connection
 
-    # Get a cursor so we can execute SQL
-    cur = con.cursor()
-    return con, cur
-
-def drop_and_setup_sqlite():
-    con, cur = setup_sqlite()
-
-    # Create tables for works first
-    drop_query = """
-    DROP TABLE IF EXISTS works;
-    """
-    cur.execute(drop_query)
-
-    create_table = '''
-    CREATE TABLE works(
-    work_id INTEGER PRIMARY KEY,
-    title TEXT NOT NULL,
-    word_count INTEGER NOT NULL,
-    publish_epoch_sec INTEGER NOT NULL,
-    update_epoch_sec INTEGER NOT NULL,
-    released_chapters_count INTEGER NOT NULL,
-    total_chapters_count INTEGER,
-    is_complete INTEGER NOT NULL,
-    content_rating TEXT,
-    date_bookmarked INTEGER NOT NULL);
-    '''
-    cur.execute(create_table)
-
-    # Then for fandoms...
-    drop_query = """
-    DROP TABLE IF EXISTS fandoms;
-    """
-    cur.execute(drop_query)
-
-    create_table = '''
-    CREATE TABLE fandoms(
-    work_id INTEGER,
-    fandom_name TEXT NOT NULL,
-    PRIMARY KEY(work_id, fandom_name));
-    '''
-    cur.execute(create_table)
-
-    # Then authors...
-    drop_query = """
-    DROP TABLE IF EXISTS authors;
-    """
-    cur.execute(drop_query)
-
-    create_table = '''
-    CREATE TABLE authors(
-    work_id INTEGER,
-    author_id TEXT NOT NULL,
-    author_name TEXT NOT NULL,
-    PRIMARY KEY(work_id, author_id));
-    '''
-    cur.execute(create_table)
-
-    return con, cur
-
-def import_authors_csv(cur):
-    # Clean CSV - move this out to another step
-    df = pd.read_csv('csvs/authors.csvs')
-    df.drop_duplicates(inplace=True)
-    df.to_csv('csvs/authors_deduped.csvs', index=False)
-
-    with open('csvs/authors_deduped.csvs', 'r') as f:
-        # # Real fast, need to find dupe ids
-        # work_ids = {}
-        # contents = csvs.reader(f)
-        # headers = next(contents)  # Skip headers
-        # dupes = []
-        # for row in contents:
-        #     work_id = row[0]
-        #     author_id = row[1]
-        #     primary_key = work_id + author_id
-        #     if primary_key in work_ids:
-        #         print("The dupe work id is")
-        #         print(row)
-        #         dupes.append(row)
-        #     else:
-        #         work_ids[primary_key] = 1
-        # return
-
-        contents = csv.reader(f)
-        headers = next(contents)  # Skip headers TODO make the table insert & create based on headers
-
-        insert_records = """
-        INSERT INTO authors(
-        work_id, 
-        author_id,
-        author_name) VALUES(
-        ?, 
-        ?,
-        ?)
-        """
-
-        cur.executemany(insert_records, contents)
-
-def import_fandoms_csv(cur):
-    # Clean CSV - move this out to another step
-    df = pd.read_csv('csvs/fandoms.csvs')
-    df.drop_duplicates(inplace=True)
-    df.to_csv('csvs/fandoms_deduped.csvs', index=False)
-
-    with open('csvs/fandoms_deduped.csvs', 'r') as f:
-        # # Real fast, need to find dupe ids
-        # work_ids = {}
-        # contents = csvs.reader(f)
-        # headers = next(contents)  # Skip headers
-        # dupes = []
-        # for row in contents:
-        #     work_id = row[0]
-        #     fandom_name = row[1]
-        #     primary_key = work_id + fandom_name
-        #     if primary_key in work_ids:
-        #         print("The dupe work id is")
-        #         print(row)
-        #         dupes.append(row)
-        #     else:
-        #         work_ids[primary_key] = 1
-        # return
-
-        contents = csv.reader(f)
-        headers = next(contents)  # Skip headers TODO make the table insert & create based on headers
-
-        insert_records = """
-        INSERT INTO fandoms(
-        work_id, 
-        fandom_name) VALUES(
-        ?, 
-        ?)
-        """
-
-        cur.executemany(insert_records, contents)
-
-def import_works_csv(cur):
-    # Clean CSV - move this out to another step
-    df = pd.read_csv('csvs/works.csvs')
-    df.drop_duplicates(inplace=True)
-    df.to_csv('csvs/works_deduped.csvs', index=False)
-
-    with open('csvs/works_deduped.csvs', 'r') as f:
-        # # Real fast, need to find dupe ids
-        # work_ids = {}
-        # contents = csvs.reader(f)
-        # headers = next(contents)  # Skip headers
-        # dupes = []
-        # for row in contents:
-        #     work_id = row[0]
-        #     if work_id in work_ids:
-        #         print("The dupe work id is")
-        #         print(row)
-        #         dupes.append(row)
-        #     else:
-        #         work_ids[work_id] = 1
-        # return
-
-        contents = csv.reader(f)
-        headers = next(contents)  # Skip headers TODO make the table insert & create based on headers
-
-        insert_records = """
-        INSERT INTO works(
-        work_id, 
-        title, 
-        word_count, 
-        publish_epoch_sec, 
-        update_epoch_sec,
-        released_chapters_count,
-        total_chapters_count,
-        is_complete,
-        content_rating,
-        date_bookmarked) VALUES(
-        ?, 
-        ?, 
-        ?, 
-        ?, 
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        ?)
-        """
-
-        cur.executemany(insert_records, contents)
 
 def select_all(cur, year: int = None):
     print("Running select-all")
@@ -352,31 +167,116 @@ def calc_works_per_author(cur, year: int = None):
     #     print(r)
     return rows
 
+def calc_works_per_rating(cur, year: int = None):
+    print("Running works per rating")
+    date_where = ''
+    if year:
+        epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        epoch_end = datetime.datetime(year=year + 1, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch_start} AND date_bookmarked < {epoch_end}' \
+            .format(epoch_start=epoch_start, epoch_end=epoch_end)
+
+    calc_query = """
+    SELECT content_rating, COUNT(work_id) as num_works
+    FROM works    
+    {date_where}    
+    GROUP BY content_rating
+    ORDER BY num_works DESC
+    """.format(date_where=date_where)
+    rows = cur.execute(calc_query).fetchall()
+    for r in rows:
+        print(r)
+    return rows
+
+
+def select_top_10_addn_tags_per_rating(cur, year: int = None):
+    print("Running top 10 additional tags per work rating (ex E/M/T/G/unrated)")
+    date_where = ''
+    if year:
+        epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        epoch_end = datetime.datetime(year=year + 1, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch_start} AND date_bookmarked < {epoch_end}' \
+            .format(epoch_start=epoch_start, epoch_end=epoch_end)
+
+    calc_query = """    
+    WITH tag_counts_cte AS 
+    (
+        SELECT cr, tag_id, num_occ, ROW_NUMBER() OVER ( 
+                                        PARTITION BY cr 
+                                        ORDER BY num_occ DESC ) row_number
+        FROM (    
+            SELECT 
+                works.content_rating as cr, 
+                wrangled_work_tags.wrangled_tag_id as tag_id, 
+                COUNT(works.work_id) as num_occ                 
+            FROM works    
+            INNER JOIN work_tags ON works.work_id = work_tags.work_id
+            INNER JOIN wrangled_work_tags ON work_tags.work_tag_id = wrangled_work_tags.work_tag_id    
+            {date_where}        
+            GROUP BY works.content_rating, wrangled_work_tags.wrangled_tag_id
+            ORDER BY num_occ DESC
+        )        
+    ) 
+    SELECT cr, tag_id, num_occ
+    FROM tag_counts_cte
+    WHERE row_number <= 10
+    ORDER BY cr DESC
+     
+    """.format(date_where=date_where)
+    rows = cur.execute(calc_query).fetchall()
+    for r in rows:
+        print(r)
+    return rows
+
+
+def calc_num_unwrangled_work_tags(cur):
+    select_query = """
+        SELECT work_tags.work_tag_id
+        FROM works
+        INNER JOIN work_tags ON works.work_id = work_tags.work_id
+        WHERE work_tags.work_tag_id NOT IN
+            (SELECT wrangled_work_tags.work_tag_id
+             FROM wrangled_work_tags
+            ) 
+            AND work_tags.work_tag_id NOT IN
+            (SELECT unwrangleable_tag_id
+             FROM unwrangleable_work_tags
+            )         
+        GROUP BY work_tags.work_tag_id
+        """
+    rows = cur.execute(select_query).fetchall()
+    for r in rows:
+        print(r)
+    print(len(rows))
+    return set(rows)
 
 if __name__ == '__main__':
     # Setup
-    sql_connection, sqlite_cursor = drop_and_setup_sqlite()
-    import_works_csv(sqlite_cursor)
-    import_fandoms_csv(sqlite_cursor)
-    import_authors_csv(sqlite_cursor)
+    sql_connection, sqlite_cursor = setup_sqlite_connection()
 
     # Let's calculate stats
     # --- Just works
-    select_all(sqlite_cursor)  # Testing
-    calc_total_wc_read(sqlite_cursor, year=2022)
-    select_biggest_works(sqlite_cursor, year=2022)
-
+    # select_all(sqlite_cursor)  # Testing
+    # calc_total_wc_read(sqlite_cursor, year=2022)
+    # select_biggest_works(sqlite_cursor, year=2022)
+    # calc_works_per_rating(sqlite_cursor, year=2022)
 
     # --- Just fandoms
-    calc_most_per_fandom(sqlite_cursor)
+    # calc_most_per_fandom(sqlite_cursor)
 
     # --- Works AND fandoms
-    calc_wc_and_works_per_fandom(sqlite_cursor, year=2022)
-    select_first_fic_per_fandom_wc(sqlite_cursor, year=2022)
+    # calc_wc_and_works_per_fandom(sqlite_cursor, year=2022)
+    # select_first_fic_per_fandom_wc(sqlite_cursor, year=2022)
 
     # --- Works AND authors
     # calc_wc_per_author(sqlite_cursor, year=2022)
     # calc_works_per_author(sqlite_cursor, year=2022)
+
+    # --- Top 20 additional tags per work ratings
+    select_top_10_addn_tags_per_rating(sqlite_cursor, year=2022)
+
+    # --- # of unwrangled works
+    # calc_num_unwrangled_work_tags(sqlite_cursor)
 
     # Cleanup
     sql_connection.commit()
