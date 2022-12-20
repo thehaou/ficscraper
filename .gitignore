@@ -3,3 +3,5 @@ SETUP.INI
 .idea
 .DS_Store
 ao3_yir.db
+output/cards/*.jpg
+output/csvs/*.csv

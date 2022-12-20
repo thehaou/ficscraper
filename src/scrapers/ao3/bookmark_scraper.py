@@ -1,4 +1,5 @@
 import itertools
+import json
 import re
 from datetime import datetime
 import logging
@@ -9,7 +10,7 @@ from time import mktime
 from time import sleep
 from bs4 import BeautifulSoup
 
-from src.scrapers.ao3.ArchiveWarningsUtils import get_quadrant, ArchiveWarning
+from src.scrapers.ao3.utils_archive_warnings import get_quadrant, ArchiveWarning
 import src.scrapers.ao3.constants as constants
 
 
@@ -19,7 +20,7 @@ def error_and_quit(error_msg, input_string=""):
     exit(-1)
 
 
-class AO3Scraper:
+class AO3BookmarkScraper:
     def __init__(self, username, password):
         self._username = username
         self._password = password
@@ -34,6 +35,7 @@ class AO3Scraper:
         sess = requests.Session()
         req = sess.get(self._homepage_url)
         soup = BeautifulSoup(req.text, features='html.parser')
+        sleep(1.5)  # Try to avoid triggering rate limiting
 
         authenticity_token = soup.find('input', {'name': 'authenticity_token'})['value']
         logging.debug('auth token is ' + str(authenticity_token))
@@ -61,29 +63,32 @@ class AO3Scraper:
         api_url = (self._bookmarks_url_template % self._username)
 
         # UNCOMMENT FOR TESTING: only fetch n number of patches (I have 100+, which isn't feasible for quick testing)
-        page_count_limit = 2
+        # page_count_limit = 2
         # END UNCOMMENT SECTION
 
         pages = []
         for page_num in itertools.count(start=1):
             # UNCOMMENT FOR TESTING
-            page_count_limit -= 1
-            if page_count_limit == 0:
-                break
+            # page_count_limit -= 1
+            # if page_count_limit == 0:
+            #     break
             # END UNCOMMENT SECTION
 
             logging.info('searching on page ' + str(page_num))
 
             while True:
                 req = self._sess.get(api_url % page_num)
+                sleep(1.5)  # Try to avoid triggering rate limiting
+
                 if req.status_code == 429:
                     # https://otwarchive.atlassian.net/browse/AO3-5761
                     logging.error("AO3 rate limits; we will receive 429 \"Too Many Requests\" if we ask for pages "
                                   "too often. We need to wait for several minutes, sorry!")
-                    logging.info("Sleeping for 5 min")
-                    sleep(60 * 5)
+                    logging.info("Sleeping for 3 min")
+                    sleep(60 * 3)
                 else:
                     break
+
             soup = BeautifulSoup(req.text, features='html.parser')
 
             ol_tag = soup.find('ol', class_='bookmark index group')
@@ -116,7 +121,8 @@ class AO3Scraper:
         total_author_row_list = []
         total_fandom_row_list = []
         total_archive_warning_row_list = []
-        total_other_tag_row_list = []
+        total_addn_tag_row_list = []
+        total_user_tag_row_list = []
         total_series_row_list = []
         total_ao3_char_row_list = []
         for ol_tag in pages:
@@ -129,7 +135,8 @@ class AO3Scraper:
             author_row_list = []
             fandom_row_list = []
             archive_warning_row_list = []
-            other_tag_row_list = []
+            addn_tag_row_list = []
+            user_tag_row_list = []
             series_row_list = []
             char_row_list = []
 
@@ -151,7 +158,7 @@ class AO3Scraper:
                 # work page
                 publish_epoch_sec = None
 
-                characters, other_tags = self.process_tags(li_tag) # TOO MANY on page 3, e.g. https://archiveofourown.org/works/13111908/chapters/29997507
+                characters, addn_tags = self.process_tags(li_tag) # TOO MANY on page 3, e.g. https://archiveofourown.org/works/13111908/chapters/29997507
 
                 series_ids, series_names = self.process_series(li_tag)
 
@@ -162,13 +169,12 @@ class AO3Scraper:
                     {
                         "work_id": work_id,
                         "title": title,
-                        "website": website,
+                        # "website": website,
                         "word_count": word_count,
                         "publish_epoch_sec": publish_epoch_sec,
                         "update_epoch_sec": update_epoch_sec,
                         "released_chapters_count": released_chapters_count,
                         "total_chapters_count": total_chapters_count,
-                        "user_tags": user_tags,
                         "is_complete": is_complete,
                         "content_rating": content_rating,
                         "date_bookmarked": date_bookmarked
@@ -194,11 +200,18 @@ class AO3Scraper:
                             "warning": archive_warning.value
                         })
 
-                if other_tags is not None:
-                    for other_tag in other_tags:
-                        other_tag_row_list.append({
+                if addn_tags is not None:
+                    for addn_tag in addn_tags:
+                        addn_tag_row_list.append({
                             "work_id": work_id,
-                            "other_tag": other_tag
+                            "work_tag_id": addn_tag
+                        })
+
+                if user_tags is not None:
+                    for user_tag in user_tags:
+                        user_tag_row_list.append({
+                            "work_id": work_id,
+                            "user_tag": user_tag
                         })
 
                 if series_ids is not None:
@@ -230,22 +243,28 @@ class AO3Scraper:
                 logging.debug("pg{} - putting {} archive warnings on the queue".format(page_num,
                                                                                        len(archive_warning_row_list)))
                 total_archive_warning_row_list.extend(archive_warning_row_list)
-            if len(other_tag_row_list) > 0:
-                logging.debug("pg{} - putting {} other tags on the queue".format(page_num, len(other_tag_row_list)))
-                total_other_tag_row_list.extend(other_tag_row_list)
+            if len(addn_tag_row_list) > 0:
+                logging.debug("pg{} - putting {} additional tags on the queue".format(page_num, len(addn_tag_row_list)))
+                total_addn_tag_row_list.extend(addn_tag_row_list)
+            if len(user_tag_row_list) > 0:
+                logging.debug("pg{} - putting {} user-defined bookmark tags on the queue"
+                              .format(page_num, len(user_tag_row_list)))
+                total_user_tag_row_list.extend(user_tag_row_list)
             if len(series_row_list) > 0:
                 logging.debug("pg{} - putting {} series on the queue".format(page_num, len(series_row_list)))
                 total_series_row_list.extend(series_row_list)
             if len(char_row_list) > 0:
                 logging.debug("pg{} - putting {} characters on the queue".format(page_num, len(char_row_list)))
                 total_ao3_char_row_list.extend(char_row_list)
+
         logging.info('Exiting AO3')
         return {
             "works": total_work_row_list,
             "authors": total_author_row_list,
             "fandoms": total_fandom_row_list,
             "warnings": total_archive_warning_row_list,
-            "misc": total_other_tag_row_list,
+            "work_tags": total_addn_tag_row_list,
+            "user_tags": total_user_tag_row_list,
             "series": total_series_row_list,
             "characters": total_ao3_char_row_list
         }
@@ -356,36 +375,12 @@ class AO3Scraper:
 
         other_tags = tags.findAll('li', class_='freeforms')
         other_tags_list = None
-        # other_tag_last = tags.find('li', class_='freeforms last') # TODO should probably figure out if this is getting parsed or not
-        """
-        The issue with parsing all the extra tags is that they hyperlink to their verbatim tag url, and only THEN
-        do they get redirected if they're tag-wrangled. For example,
-        
-        In "Two Timing Touch And Broken Bones" (https://archiveofourown.org/works/38860611), ashiftiperson lovingly 
-        included the tag "no beta we die like men". bs4 sees the attached url like so...
-        
-            https://archiveofourown.org/tags/no%20beta%20we%20die%20like%20men/works
-        
-        ...which we can see is word-for-word the author's written tag, shoved into a URL.
-        
-        But what the tag URL ACTUALLY redirects to is:
-        
-            https://archiveofourown.org/tags/Not%20Beta%20Read/works
-        
-        This unfortunately means that there's no publicly-facing tag-id wrangled out that I can take advantage of.
-        Not sure if I will hit a massive bottleneck with rate-limiting if I try to visit every single tag page or not,
-        but when I allowed 1 second between clicks, I went 40 tag-follows without getting rate limited.
-        
-        TODO needs experimentation for following up tag URLs.
-        TODO also experiment with the couple-second delay on fetching pages?? Perhaps it's a rate-limit if they 
-        receive X # of requests in a VERY short time span such that it could ONLY be automated??
-        """
-
-        if other_tags is not None:
+        if other_tags:
             other_tags_list = []
-            for other_tag in other_tags:
-                other_tags_list.append(other_tag.contents[0].contents[0])
-
+            for li_tag in other_tags:
+                a_tag = li_tag.find('a')
+                fun_id = a_tag.contents[0]
+                other_tags_list.append(fun_id)
         return character_list, other_tags_list
 
     def process_series(self, bookmark):
