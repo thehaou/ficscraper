@@ -109,6 +109,7 @@ class AO3TagWrangler:
             return
 
         # Time to construct wrangled-not-wrangled
+        logging.info('Beginning wrangling of {} work tags!'.format(len(unkn_status_tags_set)))
         wrangled_relations_list = []
         unwrangleable_list = []
 
