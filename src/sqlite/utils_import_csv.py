@@ -84,23 +84,6 @@ def import_authors_csv(cur):
     df.to_csv(ROOT_DIR + '/output/csvs/deduped/authors.csv', index=False)
 
     with open(ROOT_DIR + '/output/csvs/deduped/authors.csv', 'r') as f:
-        # # Real fast, need to find dupe ids
-        # work_ids = {}
-        # contents = csvs.reader(f)
-        # headers = next(contents)  # Skip headers
-        # dupes = []
-        # for row in contents:
-        #     work_id = row[0]
-        #     author_id = row[1]
-        #     primary_key = work_id + author_id
-        #     if primary_key in work_ids:
-        #         print("The dupe work id is")
-        #         print(row)
-        #         dupes.append(row)
-        #     else:
-        #         work_ids[primary_key] = 1
-        # return
-
         contents = csv.reader(f)
         headers = next(contents)  # Skip headers TODO make the table insert & create based on headers
 
@@ -124,23 +107,6 @@ def import_fandoms_csv(cur):
     df.to_csv(ROOT_DIR + '/output/csvs/deduped/fandoms.csv', index=False)
 
     with open(ROOT_DIR + '/output/csvs/deduped/fandoms.csv', 'r') as f:
-        # # Real fast, need to find dupe ids
-        # work_ids = {}
-        # contents = csvs.reader(f)
-        # headers = next(contents)  # Skip headers
-        # dupes = []
-        # for row in contents:
-        #     work_id = row[0]
-        #     fandom_name = row[1]
-        #     primary_key = work_id + fandom_name
-        #     if primary_key in work_ids:
-        #         print("The dupe work id is")
-        #         print(row)
-        #         dupes.append(row)
-        #     else:
-        #         work_ids[primary_key] = 1
-        # return
-
         contents = csv.reader(f)
         headers = next(contents)  # Skip headers TODO make the table insert & create based on headers
 
@@ -162,21 +128,6 @@ def import_works_csv(cur):
     df.to_csv(ROOT_DIR + '/output/csvs/deduped/works.csv', index=False)
 
     with open(ROOT_DIR + '/output/csvs/deduped/works.csv', 'r') as f:
-        # # Real fast, need to find dupe ids
-        # work_ids = {}
-        # contents = csvs.reader(f)
-        # headers = next(contents)  # Skip headers
-        # dupes = []
-        # for row in contents:
-        #     work_id = row[0]
-        #     if work_id in work_ids:
-        #         print("The dupe work id is")
-        #         print(row)
-        #         dupes.append(row)
-        #     else:
-        #         work_ids[work_id] = 1
-        # return
-
         contents = csv.reader(f)
         headers = next(contents)  # Skip headers TODO make the table insert & create based on headers
 
