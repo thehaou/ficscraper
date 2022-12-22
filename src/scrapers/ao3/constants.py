@@ -8,4 +8,7 @@ works_subscriptions_url_template = 'https://archiveofourown.org/users/%s/subscri
 series_subscriptions_url_template = 'https://archiveofourown.org/users/%s/subscriptions?type=series'
 
 # User History
-# TODO
+history_url_template = 'https://archiveofourown.org/users/%s/readings?page=%%d'
+
+# Fic Chapter Publishing History
+fic_history_template = 'https://archiveofourown.org/works/%s/navigate'
