@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 from scrapers.ao3.utils_archive_warnings import get_quadrant, ArchiveWarning
 import scrapers.ao3.constants as constants
 from scrapers.ao3.utils_progress_bar import print_progress_bar
-from scrapers.ao3.utils_requests import get_req
+from scrapers.ao3.utils_requests import get_req, setup_ao3_session
 
 
 def error_and_quit(error_msg, input_string=""):
@@ -25,36 +25,8 @@ def error_and_quit(error_msg, input_string=""):
 class AO3BookmarkScraper:
     def __init__(self, username, password):
         self._username = username
-        self._password = password
         self._bookmarks_url_template = constants.bookmarks_url_template
-        self._works_subscriptions_url_template = constants.works_subscriptions_url_template
-        self._series_subscriptions_url_template = constants.series_subscriptions_url_template
-        self._homepage_url = constants.homepage_url
-        self._login_url = constants.login_url
-
-        # Set up active session for AO3. This section is based off of
-        # https://github.com/alexwlchan/ao3/blob/master/src/ao3/users.py
-        logging.info('Setting up an active session with AO3...')
-        sess = requests.Session()
-        req = sess.get(self._homepage_url)
-        soup = BeautifulSoup(req.text, features='html.parser')
-        sleep(1.5)  # Try to avoid triggering rate limiting
-
-        authenticity_token = soup.find('input', {'name': 'authenticity_token'})['value']
-
-        req = sess.post(self._login_url, params={
-            'authenticity_token': authenticity_token,  # csrf token
-            'user[login]': self._username,
-            'user[password]': self._password,
-            'commit': 'Log in'
-        })
-
-        if 'Please try again' in req.text:
-            raise RuntimeError(
-                'Error logging in to AO3; is your password correct?')
-
-        self._sess = sess
-        logging.info('AO3 session set up')
+        self._sess = setup_ao3_session(username, password)
 
     def __repr__(self):
         # This line is directly from # https://github.com/alexwlchan/ao3/blob/master/src/ao3/users.py

@@ -1,6 +1,37 @@
 import logging
 from time import sleep
 
+import requests
+from bs4 import BeautifulSoup
+
+from scrapers.ao3 import constants
+
+
+def setup_ao3_session(username, password):
+    # Set up active session for AO3. This section is based off of
+    # https://github.com/alexwlchan/ao3/blob/master/src/ao3/users.py
+    logging.info('Setting up an active session with AO3...')
+    sess = requests.Session()
+    req = sess.get(constants.homepage_url)
+    soup = BeautifulSoup(req.text, features='html.parser')
+    sleep(1.5)  # Try to avoid triggering rate limiting
+
+    authenticity_token = soup.find('input', {'name': 'authenticity_token'})['value']
+
+    req = sess.post(constants.login_url, params={
+        'authenticity_token': authenticity_token,  # csrf token
+        'user[login]': username,
+        'user[password]': password,
+        'commit': 'Log in'
+    })
+
+    if 'Please try again' in req.text:
+        raise RuntimeError(
+            'Error logging in to AO3; is your password correct?')
+
+    logging.info('AO3 session set up')
+    return sess
+
 
 def get_req(session, url, retry_num_min=3, extra_info=None):
     count_503 = 0
