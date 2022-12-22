@@ -137,8 +137,8 @@ class AO3BookmarkScraper:
                     break
         except Exception as e:
             logging.error('ficscraper ran into an error while doing preliminary page fetching. '
-                          '(Your computer probably fell asleep.) Ficscraper will try to run against '
-                          'the pages it was able to successfully collect.')
+                          '(Your computer probably fell asleep.) '
+                          '\nFicscraper will try to run against the pages it was able to successfully collect.')
             logging.error(e)
         return pages
 

@@ -127,66 +127,87 @@ class AO3TagWrangler:
         logging.info('Beginning wrangling of {} work tags!'
                      '\nThese will either be found to be wrangleable or to be in the Additional Tags Category.'
                      .format(len(unkn_status_tags_set)))
+        logging.info('AO3 rate-limits roughly ~80 work-tag page-fetch-->redirects per ~10 minutes.\n'
+                     '\tIf the works you read have a lot of additional tags, this may take a while. For example:\n'
+                     '\n'
+                     '\tassume ~30 additional tags per work (e.g. "Fluff", "Alternate Universe - Canon Divergence", ...)\n'
+                     '\tassume you\'ve read ~1000 works\n'
+                     '\t= (~1000works) * (~30tags/work) * (10min/80tags)\n'
+                     '\t= 3750min+\n'
+                     '\t= at least 62.5hrs   (yes you read that right)\n'
+                     '\n'
+                     '\tThis process can EASILY run for several days straight, and it can also easily fall apart\n'
+                     '\tif you use AO3 in the mean time. You WILL need to change your computer sleep settings so it doesn\'t\n'
+                     '\tfall asleep while ficscraper is working.\n\n'
+                     '\tIn case it does, however, ficscraper will commit the tags it was able to wrangle, so you won\'t\n'
+                     '\thave to go back and re-wrangle them. So it\'s not the end of the world if your computer falls\n'
+                     '\tasleep; you just have to keep rerunning this wrangler until it goes down to 0.\n')
 
         wrangled_relations_list = []
         unwrangleable_list = []
         num_unkn_status_tags = len(unkn_status_tags_set)
         num_wrangled = 0
-        for unkn_status_tag in unkn_status_tags_set:
-            # Bookkeeping
-            work_tag_id = unkn_status_tag[0]
-            num_wrangled += 1
-            log_progress_bar(prefix='Wrangling tag {}/{}:'.format(num_wrangled, num_unkn_status_tags),
-                             current=num_wrangled,
-                             length=num_unkn_status_tags)
+        try:
+            for unkn_status_tag in unkn_status_tags_set:
+                # Bookkeeping
+                work_tag_id = unkn_status_tag[0]
+                num_wrangled += 1
+                log_progress_bar(prefix='Wrangling tag {}/{}:'.format(num_wrangled, num_unkn_status_tags),
+                                 current=num_wrangled,
+                                 length=num_unkn_status_tags)
 
-            href = '/tags/' + work_tag_id.replace(' ', '%20') + '/works'
+                href = '/tags/' + work_tag_id.replace(' ', '%20') + '/works'
 
-            count_503 = 0
-            while True:
-                req = self._sess.get(self._homepage_url + href)
-                sleep(1.5)  # Try to avoid triggering rate limiting
+                count_503 = 0
+                while True:
+                    req = self._sess.get(self._homepage_url + href)
+                    sleep(1.5)  # Try to avoid triggering rate limiting
 
-                if req.status_code == 429:
-                    # https://otwarchive.atlassian.net/browse/AO3-5761
-                    logging.error("\nAO3 rate limits; we will receive 429 \"Too Many Requests\" if we ask for pages "
-                                  "too often. We need to wait for several minutes, sorry!")
-                    logging.info("Sleeping for 3 min; in the middle of trying to process tag {}"
-                                 .format(work_tag_id))
-                    sleep(60 * 3)  # Tag-retry MIGHT be shorter than bookmark-page-retry
-                    continue
-                elif req.status_code == 503:
-                    # Usually this means AO3 is overloaded, but it could also mean maintenance. AO3 usually returns:
-                    #   Error 503
-                    #   The page was responding too slowly.
-                    #   There are so many people using the archive right now, we can't show your page.
-                    #   Follow <a href="https://twitter.com/ao3_status/">@AO3_Status</a> on Twitter for updates
-                    #   if this keeps happening.
-                    # If we hit 503 multiple times in a row, then we should abandon fic-scraping efforts.
-                    count_503 += 1
-                    logging.error("Hit 503 {} time(s). AO3 is overloaded OR the site is under maintenance."
-                                  .format(count_503))
-                    logging.info("Sleeping for 1 min")
-                    sleep(60 * 1)
+                    if req.status_code == 429:
+                        # https://otwarchive.atlassian.net/browse/AO3-5761
+                        logging.error("\nAO3 rate limits; we will receive 429 \"Too Many Requests\" if we ask for pages "
+                                      "too often. We need to wait for several minutes, sorry!")
+                        logging.info("Sleeping for 3 min; in the middle of trying to process tag {}"
+                                     .format(work_tag_id))
+                        sleep(60 * 3)  # Tag-retry MIGHT be shorter than bookmark-page-retry
+                        continue
+                    elif req.status_code == 503:
+                        # Usually this means AO3 is overloaded, but it could also mean maintenance. AO3 usually returns:
+                        #   Error 503
+                        #   The page was responding too slowly.
+                        #   There are so many people using the archive right now, we can't show your page.
+                        #   Follow <a href="https://twitter.com/ao3_status/">@AO3_Status</a> on Twitter for updates
+                        #   if this keeps happening.
+                        # If we hit 503 multiple times in a row, then we should abandon fic-scraping efforts.
+                        count_503 += 1
+                        logging.error("Hit 503 {} time(s). AO3 is overloaded OR the site is under maintenance."
+                                      .format(count_503))
+                        logging.info("Sleeping for 1 min")
+                        sleep(60 * 1)
 
-                    if count_503 == 5:
-                        logging.error('ficscraper has hit 503 too many times in a row. Abandoning efforts.')
-                        logging.error('Please check what\'s wrong with AO3 at https://twitter.com/ao3_status/.')
-                        exit(-1)
+                        if count_503 == 5:
+                            logging.error('ficscraper has hit 503 too many times in a row. Abandoning efforts.')
+                            logging.error('Please check what\'s wrong with AO3 at https://twitter.com/ao3_status/.')
+                            exit(-1)
+                    else:
+                        break
+
+                soup = BeautifulSoup(req.text, features='html.parser')
+                h2_tag = soup.find('h2')
+                a_tag = h2_tag.find('a')
+
+                if a_tag:
+                    # Wrangled tag; let's grab it. A "h2" tag w/o an "a" tag belongs to the Additional Category of tags,
+                    # aka tags that aren't searchable (usually due to not having enough results).
+                    wrangled_tag_id = a_tag.contents[0]
+                    wrangled_relations_list.append((work_tag_id, wrangled_tag_id))
                 else:
-                    break
-
-            soup = BeautifulSoup(req.text, features='html.parser')
-            h2_tag = soup.find('h2')
-            a_tag = h2_tag.find('a')
-
-            if a_tag:
-                # Wrangled tag; let's grab it. A "h2" tag w/o an "a" tag belongs to the Additional Category of tags,
-                # aka tags that aren't searchable (usually due to not having enough results).
-                wrangled_tag_id = a_tag.contents[0]
-                wrangled_relations_list.append((work_tag_id, wrangled_tag_id))
-            else:
-                unwrangleable_list.append((work_tag_id,))
+                    unwrangleable_list.append((work_tag_id,))
+        except Exception as e:
+            logging.error('ficscraper ran into an error while doing work tag wrangling. '
+                          '(Your computer probably fell asleep.) '
+                          '\nFicscraper will commit back to sqlite the tags it was able to successfully wrangle.')
+            logging.error(e)
 
         # Now that we have the full giant list of wrangled & can't-be-wrangled (unwrangleable), commit back to sqlite
         logging.info('\n')
