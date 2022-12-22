@@ -3,7 +3,6 @@ import argparse
 import logging
 
 import csv
-import configparser
 
 from scrapers.ao3.bookmark_scraper import AO3BookmarkScraper
 from scrapers.ao3.utils_requests import read_credentials

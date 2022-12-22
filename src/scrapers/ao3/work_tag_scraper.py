@@ -7,61 +7,37 @@ doesn't include <common tag> filtering unfortunately, so we'll have to make do w
 
 The idea is: for each top 200 tag, there exists many tags with the same meaning.
 EX: "I'm Sorry" has these tags with the same meaning (last checked 12/22/22):
-    #So very
-    sorry
-    #Sorry
-    (I am so sorry),
+    #So very sorry
     (I'm so sorry),
-    ...
     ...Sorry
     A little sorry
     again i am so sorry
-    again I’m so sorry
-    ...
-    anyway i'm sorry
-    apologies in advance for that
     Apologies.author is very sorry
     because i'm sorry
-    but im sorry
-    but sorry
     desculpa
     desole
     disculpen
-    first of all i'm sorry
     First of all im sorry
     For which I apologize
     förlåt
-    god im so sorry for this
     GOD im sorry
-    guys i am so sorry
-    ...
-    i am genuinely so sorry
-    I am literally So Sorry
-    I am really sorry
     I am so fucking sorry
     i am so so so sorry
-    i am so so sorry for this
-    ...
-    i apologise for that
-    I apologize in advance
     I apologize in advance!
     I apologize profusely
-    ...
     простите
     对不起
-...(and so on)
+...(and so on, there are dozens upon dozens.)
 
 These all wrangle back to the common tag "I'm Sorry".
 We will build a cache (sqlite table, really) that maps the freeform tag to the wrangled tag. EX:
-    "apologies in advance for that" --> "I'm Sorry"
-    "i am so so sorry for this" --> "I'm Sorry"
+    "Apologies.author is very sorry" --> "I'm Sorry"
+    "i am so so so sorry" --> "I'm Sorry"
     "простите" --> "I'm Sorry"
 which should help cut down on some of the wrangling time a user has to do on their work tags.
 """
 import logging
-from time import sleep
 
-import requests
 from bs4 import BeautifulSoup
 
 from scrapers.ao3 import constants

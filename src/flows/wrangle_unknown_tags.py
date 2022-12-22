@@ -1,9 +1,7 @@
 import logging
-import configparser
 
 from scrapers.ao3.tag_wrangler import AO3TagWrangler
 from scrapers.ao3.utils_requests import read_credentials
-from sqlite.constants import ROOT_DIR
 
 
 if __name__ == '__main__':

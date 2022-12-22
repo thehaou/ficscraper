@@ -4,10 +4,8 @@ import re
 from datetime import datetime
 import logging
 
-import requests
 from time import strptime
 from time import mktime
-from time import sleep
 from bs4 import BeautifulSoup
 
 from scrapers.ao3.utils_archive_warnings import get_quadrant, ArchiveWarning
