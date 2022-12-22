@@ -77,7 +77,7 @@ while getopts ':hw:s:g:l:' option; do
         ;;
     l)  argument_checker
         case "$OPTARG" in
-          b|'bookmarks') script='sqlite_reset_and_populate.py' ;;
+          b|'bookmarks') script='sqlite_populate_or_replace.py' ;;
           h|'history') echo "Currently unsupported, sorry!"; exit 1 ;;
           *) echo "Unrecognized argument passed in to -$option: $OPTARG"
              usage

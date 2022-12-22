@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.ao3 import constants
-from scrapers.ao3.utils_progress_bar import log_progress_bar
+from scrapers.ao3.utils_progress_bar import print_progress_bar
 from sqlite.utils_sqlite import setup_sqlite_connection
 
 
@@ -152,9 +152,9 @@ class AO3TagWrangler:
                 # Bookkeeping
                 work_tag_id = unkn_status_tag[0]
                 num_wrangled += 1
-                log_progress_bar(prefix='Wrangling tag {}/{}:'.format(num_wrangled, num_unkn_status_tags),
-                                 current=num_wrangled,
-                                 length=num_unkn_status_tags)
+                print_progress_bar(prefix='Wrangling tag {}/{}:'.format(num_wrangled, num_unkn_status_tags),
+                                   current=num_wrangled,
+                                   length=num_unkn_status_tags)
 
                 href = '/tags/' + work_tag_id.replace(' ', '%20') + '/works'
 

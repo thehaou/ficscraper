@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 
 from scrapers.ao3.utils_archive_warnings import get_quadrant, ArchiveWarning
 import scrapers.ao3.constants as constants
-from scrapers.ao3.utils_progress_bar import log_progress_bar
+from scrapers.ao3.utils_progress_bar import print_progress_bar
 
 
 def error_and_quit(error_msg, input_string=""):
@@ -192,9 +192,9 @@ class AO3BookmarkScraper:
         bookmarks_json_list = []
         for ol_tag in pages:
             # Bookkeeping
-            log_progress_bar(prefix='Scraping page {}/{}:'.format(page_num, num_pages),
-                             current=page_num,
-                             length=num_pages)
+            print_progress_bar(prefix='Scraping page {}/{}:'.format(page_num, num_pages),
+                               current=page_num,
+                               length=num_pages)
             page_num += 1
 
             # Set up lists

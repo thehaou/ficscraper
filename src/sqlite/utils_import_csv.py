@@ -12,7 +12,7 @@ def import_unwrangleable_work_tags(cur):
         data = json.load(f)
 
         insert_records = """
-        INSERT INTO unwrangleable_work_tags(
+        REPLACE INTO unwrangleable_work_tags(
         unwrangleable_tag_id) VALUES(         
         ?)
         """
@@ -27,7 +27,7 @@ def import_wrangled_work_tags(cur):
         headers = next(contents)  # Skip headers
 
         insert_records = """
-        INSERT INTO wrangled_work_tags(
+        REPLACE INTO wrangled_work_tags(
         work_tag_id, 
         wrangled_tag_id) VALUES(
         ?, 
@@ -49,7 +49,7 @@ def import_work_tags(cur):
         headers = next(contents)  # Skip headers TODO make the table insert & create based on headers
 
         insert_records = """
-        INSERT INTO work_tags(
+        REPLACE INTO work_tags(
         work_id, 
         work_tag_id) VALUES(
         ?, 
@@ -70,7 +70,7 @@ def import_warnings_csv(cur):
         headers = next(contents)  # Skip headers TODO make the table insert & create based on headers
 
         insert_records = """
-        INSERT INTO warnings(
+        REPLACE INTO warnings(
         work_id, 
         warning) VALUES(
         ?, 
@@ -92,7 +92,7 @@ def import_authors_csv(cur):
         headers = next(contents)  # Skip headers TODO make the table insert & create based on headers
 
         insert_records = """
-        INSERT INTO authors(
+        REPLACE INTO authors(
         work_id, 
         author_id,
         author_name) VALUES(
@@ -116,7 +116,7 @@ def import_fandoms_csv(cur):
         headers = next(contents)  # Skip headers TODO make the table insert & create based on headers
 
         insert_records = """
-        INSERT INTO fandoms(
+        REPLACE INTO fandoms(
         work_id, 
         fandom_name) VALUES(
         ?, 
@@ -138,7 +138,7 @@ def import_works_csv(cur):
         headers = next(contents)  # Skip headers TODO make the table insert & create based on headers
 
         insert_records = """
-        INSERT INTO works(
+        REPLACE INTO works(
         work_id,
         title, 
         word_count, 

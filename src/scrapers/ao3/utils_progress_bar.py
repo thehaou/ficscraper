@@ -1,4 +1,4 @@
-def log_progress_bar(prefix='Progress: ', current=0, length=1):
+def print_progress_bar(prefix='Progress: ', current=0, length=1):
     # Obviously if length is 10,000 or something we can't render that. The average terminal window
     # is 80col x 24row; let's use 50 col.
     bar_length = 50

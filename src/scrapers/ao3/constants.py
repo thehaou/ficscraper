@@ -12,3 +12,6 @@ history_url_template = 'https://archiveofourown.org/users/%s/readings?page=%%d'
 
 # Fic Chapter Publishing History
 fic_history_template = 'https://archiveofourown.org/works/%s/navigate'
+
+# Tags
+top_100_tags_url = 'https://archiveofourown.org/tags'

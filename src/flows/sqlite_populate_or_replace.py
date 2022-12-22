@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from sqlite.utils_sqlite import clean_slate_sqlite
+from sqlite.utils_sqlite import populate_sqlite
 
 if __name__ == '__main__':
     # Set up logging
     logging.basicConfig(level=logging.INFO,  # Switch to logging.INFO for less output
                         format="%(levelname)s - %(message)s")
-    clean_slate_sqlite()
+    populate_sqlite()
 
-    logging.info('Done resetting & populating sqlite db (you can find it under src/sqlite/ao3_yir.db).'                                  
+    logging.info('Done populating sqlite db (you can find it under src/sqlite/ficscraper.db).'
                  '\nIf you have experience with querying, you can use the sqlite CLI to run ad hoc stats:'
                  '\n\n\thttps://sqlite.org/cli.html\n'
                  '\nSome general-purposes fic-stat functions are available under src/sqlite/sqlite_stats.py as well.'
