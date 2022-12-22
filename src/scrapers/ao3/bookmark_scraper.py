@@ -179,7 +179,7 @@ class AO3BookmarkScraper:
         # Initialize scraping variables
         logging.info('Beginning to scrape each collected page. This scraping process does not include wrangling tags, '
                      'so it will finish relatively quickly. See ficscraper\'s "wrangle" process '
-                     '(./ficscraper.sh --wrangle) for more info on how to automatically wrangle these collected tags.')
+                     '(./ficscraper_cli.sh --wrangle) for more info on how to automatically wrangle these collected tags.')
         page_num = 1
         total_work_row_list = []
         total_author_row_list = []
@@ -226,7 +226,7 @@ class AO3BookmarkScraper:
 
                 # Work tags require a separate network call to wrangle them
                 # (ex "no beta we die like men" --> "Not Beta Read"). To keep scraping down to a reasonable amount of
-                # processing time, tag wrangling is a completely separate process. (See ./ficscraper.sh --wrangle)
+                # processing time, tag wrangling is a completely separate process. (See ./ficscraper_cli.sh --wrangle)
                 characters, addn_tags = self.process_tags(li_tag)
 
                 series_ids, series_names = self.process_series(li_tag)

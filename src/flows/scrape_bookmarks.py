@@ -23,20 +23,20 @@ def set_up_parser():
     parser.add_argument('-p', '--pages',
                         help='Number of bookmark pages to be scraped. There are 20 works per page on AO3.'
                              'EX: to scrape the 100 most recent bookmarks, we\'d ask to fetch 100/20 = 5 pages:'
-                             '  ./ficscraper.sh -s bookmarks --pages 5'
+                             '  ./ficscraper_cli.sh -s bookmarks --pages 5'
                              'By default ficscraper will try to fetch ALL pages.')
     parser.add_argument('-e', '--end_date',
                         help='Sets the upper limit for the time range to scrape fics in. Takes precedence over --pages.'
                              'Format is yyyyMMdd (year-month-date).'
                              'EX: to scrape 5 pages of bookmarks no older than Dec 31, 2022 AO3-server-time:'
-                             '  ./ficscraper.sh -s bookmarks --pages 5 --end_date=20221231'
+                             '  ./ficscraper_cli.sh -s bookmarks --pages 5 --end_date=20221231'
                              'By default ficscraper will not impose an end_date limit (collects all fic prior to start_date)'
                         )
     parser.add_argument('-s', '--start_date',
                         help='Sets the lower limit for the time range to scrape fics in.'
                              'Format is yyyyMMdd (year-month-date).'
                              'EX: to scrape all bookmarks starting on or after Jan 1, 2022 AO3-server-time:'
-                             '  ./ficscraper.sh -s bookmarks --start_date=20220101'
+                             '  ./ficscraper_cli.sh -s bookmarks --start_date=20220101'
                              'By default ficscraper will not impose any start date limit (collects all fics up to end_date')
     return parser
 

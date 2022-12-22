@@ -14,5 +14,5 @@ if __name__ == '__main__':
                  '\n\n\thttps://sqlite.org/cli.html\n'
                  '\nSome general-purposes fic-stat functions are available under src/sqlite/sqlite_stats.py as well.'
                  '\nYou can also now run flows that rely on sqlite being populated, such as AO3 year-in-review:'
-                 '\n\n\t./ficscraper.sh --generate year_in_review 2022\n')
+                 '\n\n\t./ficscraper_cli.sh --generate year_in_review 2022\n')
     logging.info('ficscraper successfully finished running.')
