@@ -1,9 +1,10 @@
+import datetime
 import logging
 import sqlite3
 
 from sqlite.constants import SQLITE_DIR
 from sqlite.utils_import_csv import import_works_csv, import_fandoms_csv, import_authors_csv, import_warnings_csv, \
-    import_work_tags, import_wrangled_work_tags, import_unwrangleable_work_tags
+    import_work_tags
 
 
 def setup_sqlite_connection():
@@ -170,3 +171,11 @@ def clean_slate_sqlite():
     sql_connection.commit()
     logging.info('Closing connection to sqlite db')
     sql_connection.close()
+
+
+def format_date_where(year: int):
+    epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+    epoch_end = datetime.datetime(year=year + 1, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+    date_where = 'WHERE date_bookmarked >= {epoch_start} AND date_bookmarked < {epoch_end}' \
+        .format(epoch_start=epoch_start, epoch_end=epoch_end)
+    return date_where

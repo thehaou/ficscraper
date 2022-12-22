@@ -8,12 +8,6 @@ import configparser
 from scrapers.ao3.bookmark_scraper import AO3BookmarkScraper
 
 
-def usage():
-    return """
-    
-    """
-
-
 def set_up_parser():
     parser = argparse.ArgumentParser(
         prog='scrape_bookmarks.py',
