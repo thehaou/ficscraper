@@ -12,7 +12,7 @@ def get_req(session, url, retry_num_min=3, extra_info=None):
             # https://otwarchive.atlassian.net/browse/AO3-5761
             logging.error("\nAO3 rate limits; we will receive 429 \"Too Many Requests\" if we ask for pages "
                           "too often. We need to wait for several minutes, sorry!")
-            extra_info = "; in the middle of trying to process {}".format(extra_info) if extra_info else '.'
+            extra_info = "; in the middle of trying to process {}".format(extra_info) if extra_info else '...'
             logging.info("Sleeping for 3 min{}"
                          .format(extra_info))
             sleep(60 * retry_num_min)
