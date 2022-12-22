@@ -1,11 +1,15 @@
+import argparse
 import datetime
+import logging
 
 from html2image import Html2Image
 from mako.template import Template
 from mako.exceptions import RichTraceback
 
-from sqlite_stats import setup_sqlite, calc_wc_and_works_per_fandom, calc_wc_per_author, calc_works_per_author, \
+from sqlite.constants import ROOT_DIR, SRC_DIR
+from sqlite.sqlite_stats import calc_wc_and_works_per_fandom, calc_wc_per_author, calc_works_per_author, \
     select_first_fic_per_fandom_wc, select_biggest_works
+from sqlite.utils_sqlite import setup_sqlite_connection
 
 """
 This file generates some stats one might find interesting for a year-in-review. Cards are outputted to the /cards
@@ -22,9 +26,7 @@ Cards generated right now are:
 You can modify the "year" field right below this message to change which year it calculates year-in-review for. 
 """
 
-# TODO move out to constants file?
-year = 2022
-subheading = "— AO3 {} YEAR-IN-REVIEW —".format(year)
+subheading_template = "— AO3 {} YEAR-IN-REVIEW —"  # TODO move to constants...?
 
 # Testing-related things. TODO move out to a testing folder?
 def get_test_5_ranked_items():
@@ -48,27 +50,27 @@ def render_mako_template(template_file_name: str, template_args: dict):
     except:
         traceback = RichTraceback()
         for (template_file_name, lineno, function, line) in traceback.traceback:
-            # print("File %s, line %s, in %s" % (filename, lineno, function))
-            print(line)
+            logging.error('ERROR generating Mako template. Please contact the repo owner.')
+            logging.error("File %s, line %s, in %s" % (template_file_name, lineno, function))
+            logging.error(line)
         exit(-1)
 
 
 def export_html_as_image(html: str, image_name='test.jpg'):
-    hti = Html2Image(output_path="cards",
+    hti = Html2Image(output_path=ROOT_DIR + "/output/cards",
                      size=(360, 640))  # size: (width, height)
 
-    print("Screenshotting...")
+    logging.info("Screenshotting HTML...")
     hti.screenshot(
-        # html_file='card_templates/top_5.html',
         html_str=html,
-        css_file='card_templates/card.css',
+        css_file=SRC_DIR + '/output_card_templates/css/card.css',
         save_as=image_name
     )
 
 # Card-making callers
 def make_top_5_fandom_card(image_name):
     # Get stats
-    con, cur = setup_sqlite()
+    con, cur = setup_sqlite_connection()
     top_rows = calc_wc_and_works_per_fandom(cur, year=year)  # a tuple
 
     # Compute just the top five from all the rows we got back
@@ -90,25 +92,26 @@ def make_top_5_fandom_card(image_name):
                              'details_template_vars': details_template_vars})
 
     # Make the mako template
-    rendered_template = render_mako_template(template_file_name="card_templates/top_5.html",
+    rendered_template = render_mako_template(template_file_name=SRC_DIR + '/output_card_templates/html/top_5.html',
                                              template_args={"title": title,
                                                             "title_flavor": title_flavor,
-                                                            "subheading": subheading,
+                                                            "subheading": subheading_template.format(year),
                                                             "ranked_items": ranked_items})
 
     # Write out the HTML to a test file. This is really just for testing CSS quickly in-browser
     # TODO test code, flesh out test folder with it...?
-    with open('card_templates/test.html', 'w') as f:
+    with open(SRC_DIR + '/output_card_templates/css/test.html', 'w') as f:
         f.write(rendered_template)
 
     # Capture HTML to a jpg into our cards folder
     export_html_as_image(html=rendered_template, image_name=image_name)
-    print("Done")
+    logging.info("HTML successfully exported as image!")
 
 
 def make_top_5_authors_wc_card(image_name):
+    logging.info('Making top-5-authors-read-by-total-word-count card...')
     # Get stats
-    con, cur = setup_sqlite()
+    con, cur = setup_sqlite_connection()
     top_rows = calc_wc_per_author(cur, year=year)  # a tuple
 
     # Do some special cleaning on author names
@@ -129,25 +132,26 @@ def make_top_5_authors_wc_card(image_name):
                              'details_template_vars': details_template_vars})
 
     # Make the mako template
-    rendered_template = render_mako_template(template_file_name="card_templates/top_5.html",
+    rendered_template = render_mako_template(template_file_name=SRC_DIR + '/output_card_templates/html/top_5.html',
                                              template_args={"title": title,
                                                             "title_flavor": title_flavor,
-                                                            "subheading": subheading,
+                                                            "subheading": subheading_template.format(year),
                                                             "ranked_items": ranked_items})
 
     # Write out the HTML to a test file. This is really just for testing CSS quickly in-browser
     # TODO test code, flesh out test folder with it...?
-    with open('card_templates/test.html', 'w') as f:
+    with open(SRC_DIR + '/output_card_templates/css/test.html', 'w') as f:
         f.write(rendered_template)
 
     # Capture HTML to a jpg into our cards folder
     export_html_as_image(html=rendered_template, image_name=image_name)
-    print("Done")
+    logging.info("Done")
 
 
 def make_top_5_authors_count_card(image_name):
+    logging.info('Making top-5-authors-read-by-num-works card...')
     # Get stats
-    con, cur = setup_sqlite()
+    con, cur = setup_sqlite_connection()
     top_rows = calc_works_per_author(cur, year=year)  # a tuple
 
     # Do some special cleaning on author names
@@ -168,24 +172,26 @@ def make_top_5_authors_count_card(image_name):
                              'details_template_vars': details_template_vars})
 
     # Make the mako template
-    rendered_template = render_mako_template(template_file_name="card_templates/top_5.html",
+    rendered_template = render_mako_template(template_file_name=SRC_DIR + '/output_card_templates/html/top_5.html',
                                              template_args={"title": title,
                                                             "title_flavor": title_flavor,
-                                                            "subheading": subheading,
+                                                            "subheading": subheading_template.format(year),
                                                             "ranked_items": ranked_items})
 
     # Write out the HTML to a test file. This is really just for testing CSS quickly in-browser
     # TODO test code, flesh out test folder with it...?
-    with open('card_templates/test.html', 'w') as f:
+    with open(SRC_DIR + '/output_card_templates/css/test.html', 'w') as f:
         f.write(rendered_template)
 
     # Capture HTML to a jpg into our cards folder
     export_html_as_image(html=rendered_template, image_name=image_name)
-    print("Done")
+    logging.info("Done")
+
 
 def make_first_fic_of_top_5_fandoms(image_name):
+    logging.info('Making first-fic-of-top-5-fandoms card...')
     # Get stats
-    con, cur = setup_sqlite()
+    con, cur = setup_sqlite_connection()
     top_rows = select_first_fic_per_fandom_wc(cur, year=year)  # a tuple
 
     # Compute just the top five from all the rows we got back
@@ -218,24 +224,26 @@ def make_first_fic_of_top_5_fandoms(image_name):
                              'details_template_vars': details_template_vars})
 
     # Make the mako template
-    rendered_template = render_mako_template(template_file_name="card_templates/top_5.html",
+    rendered_template = render_mako_template(template_file_name=SRC_DIR + '/output_card_templates/html/top_5.html',
                                              template_args={"title": title,
                                                             "title_flavor": title_flavor,
-                                                            "subheading": subheading,
+                                                            "subheading": subheading_template.format(year),
                                                             "ranked_items": ranked_items})
 
     # Write out the HTML to a test file. This is really just for testing CSS quickly in-browser
     # TODO test code, flesh out test folder with it...?
-    with open('card_templates/test.html', 'w') as f:
+    with open(SRC_DIR + '/output_card_templates/css/test.html', 'w') as f:
         f.write(rendered_template)
 
     # Capture HTML to a jpg into our cards folder
     export_html_as_image(html=rendered_template, image_name=image_name)
-    print("Done")
+    logging.info("Done")
+
 
 def make_top_5_longest_works_card(image_name):
+    logging.info('Making top-5-longest-works-read card...')
     # Get stats
-    con, cur = setup_sqlite()
+    con, cur = setup_sqlite_connection()
     top_rows = select_biggest_works(cur, year=year)  # a tuple
 
     # Just truncate
@@ -260,20 +268,21 @@ def make_top_5_longest_works_card(image_name):
                              'details_template_vars': details_template_vars})
 
     # Make the mako template
-    rendered_template = render_mako_template(template_file_name="card_templates/top_5.html",
+    rendered_template = render_mako_template(template_file_name=SRC_DIR + '/output_card_templates/html/top_5.html',
                                              template_args={"title": title,
                                                             "title_flavor": title_flavor,
-                                                            "subheading": subheading,
+                                                            "subheading": subheading_template.format(year),
                                                             "ranked_items": ranked_items})
 
     # Write out the HTML to a test file. This is really just for testing CSS quickly in-browser
     # TODO test code, flesh out test folder with it...?
-    with open('card_templates/test.html', 'w') as f:
+    with open(SRC_DIR + '/output_card_templates/css/test.html', 'w') as f:
         f.write(rendered_template)
 
     # Capture HTML to a jpg into our cards folder
     export_html_as_image(html=rendered_template, image_name=image_name)
-    print("Done")
+    logging.info("Done")
+
 
 # Card-making helpers - usually for odd edge cases
 def get_top_five_from_prefix(rows):
@@ -308,12 +317,13 @@ def get_top_five_from_prefix(rows):
 
         # Clean for prefix
         name = row[0]
-        name = name.split(':')[0]  # Strip out delimeters like -, :, (
+        name = name.split(':')[0]  # Strip out delimiters like -, :, (
         name = name.split(' - ')[0]
         name = name.split(' (')[0]
 
         # Compute prefix
-        prefix_end = min(len(name), 9)  # 9 is very fine-tuned for my results; Star Wars is 9 characters
+        prefix_end = min(len(name), 9)  # TODO 9 is very fine-tuned for my results; Star Wars is 9 characters.
+                                        # Totally useless # for other-language fandoms like 魔道祖师 - 墨香铜臭
         prefix = name[:prefix_end]
 
         if prefix not in prefixes:
@@ -335,7 +345,7 @@ def get_top_five_active(rows):
     top_5 = []
     for row in rows:
         if len(top_5) == 5:
-            break;
+            break
 
         author_id = row[0]
         if (author_id != 'Anonymous') and (author_id != 'orphan_account'):
@@ -343,9 +353,43 @@ def get_top_five_active(rows):
     return top_5
 
 
+def set_up_parser():
+    parser = argparse.ArgumentParser(
+        prog='year_in_review_make_cards.py',
+        description='Makes shareable JPGs ("cards") based on AO3 data stored in ao3_yir.db sqlite instance.'
+                    'Requires populating that instance first, such as via '
+                    '\n\t./ficscraper_cli.sh --scrape bookmarks',
+        epilog='https://github.com/thehaou/ficscraper#contact-info'
+    )
+    parser.add_argument('year',
+                        help='Year to calculate year-in-review for. A four-digit number.'
+                             'EX: to calculate year-in-review for 2022:'
+                             '  ./ficscraper_cli.sh --generate year_in_review 2022')
+    return parser
+
+
 if __name__ == '__main__':
+    # Set up logging
+    logging.basicConfig(level=logging.INFO,  # Switch to logging.INFO for less output
+                        format="%(levelname)s - %(message)s")
+
+    # Set up parser
+    logging.info('Parsing arguments...')
+    parser = set_up_parser()
+    args = parser.parse_args()
+    try:
+        datetime.datetime.strptime(args.year, '%Y')
+    except ValueError:
+        raise ValueError("Incorrect format for year passed in: should be YYYY")
+    year = int(args.year)
+
+    # Start making cards
+    logging.info('Kicking off card-creating process...')
     make_top_5_fandom_card(image_name='{}_top_5_fandoms.jpg'.format(year))
     make_top_5_authors_wc_card(image_name='{}_top_5_authors_wc.jpg'.format(year))
     make_top_5_authors_count_card(image_name='{}_top_5_authors_works.jpg'.format(year))
     make_first_fic_of_top_5_fandoms(image_name='{}_top_5_fandoms_first_fic.jpg'.format(year))
     make_top_5_longest_works_card(image_name='{}_top_5_longest_works.jpg'.format(year))
+
+    logging.info('Done creating card JPGs (you can find them in output/cards).')
+    logging.info('ficscraper successfully finished running.')

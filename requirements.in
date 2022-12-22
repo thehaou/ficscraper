@@ -19,3 +19,9 @@ numpy==1.24.0
 python-dateutil==2.8.2
 six==1.16.0
 pytz==2022.7
+
+# Used to generate card images
+Mako==1.2.4
+MarkupSafe==2.1.1
+# html2image screenshots the HTML on a browser, default Chrome
+html2image==2.0.1
