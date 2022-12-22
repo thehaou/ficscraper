@@ -188,7 +188,7 @@ class AO3TagWrangler:
                         if count_503 == 5:
                             logging.error('ficscraper has hit 503 too many times in a row. Abandoning efforts.')
                             logging.error('Please check what\'s wrong with AO3 at https://twitter.com/ao3_status/.')
-                            exit(-1)
+                            raise Exception("Hit 503 5 times")
                     else:
                         break
 
