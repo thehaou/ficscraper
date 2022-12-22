@@ -9,8 +9,8 @@ from sqlite.utils_import_csv import import_works_csv, import_fandoms_csv, import
 
 def setup_sqlite_connection():
     # Make a new db; open connection
-    logging.info('Connecting to sqlite instance ao3_yir.db...')
-    con = sqlite3.connect(SQLITE_DIR + "/ao3_yir.db")
+    logging.info('Connecting to sqlite instance ficscraper.db...')
+    con = sqlite3.connect(SQLITE_DIR + "/ficscraper.db")
 
     # Get a cursor so we can execute SQL
     cur = con.cursor()
@@ -46,9 +46,7 @@ def drop_and_setup_wrangled_tags(cur):
     cur.execute(create_table)
 
 
-def drop_and_setup_sqlite():
-    con, cur = setup_sqlite_connection()
-
+def drop_and_create_sqlite(con, cur):
     logging.info('\n')
     logging.info('/ ~~~~~~~~~~~~~~~~~~~~~~~ \\')
     logging.info('|   sqlite - drop & load   |')
@@ -150,7 +148,27 @@ def drop_and_setup_sqlite():
 
 def clean_slate_sqlite():
     # Setup
-    sql_connection, sqlite_cursor = drop_and_setup_sqlite()
+    sql_connection, sqlite_cursor = setup_sqlite_connection()
+
+    # Drop and recreate tables
+    drop_and_create_sqlite(sql_connection, sqlite_cursor)
+    # drop_and_setup_wrangled_tags(sqlite_cursor)  # DO NOT UNCOMMENT UNLESS YOU KNOW WHAT YOU'RE DOING
+                                                   # The db comes with pre-loaded wrangled tag tables for
+                                                   # your convenience. Only drop if you really, really want to nuke.
+
+    # Cleanup
+    logging.info('Committing changes back to sqlite db')
+    sql_connection.commit()
+    logging.info('Closing connection to sqlite db')
+    sql_connection.close()
+
+
+def populate_sqlite():
+    # Setup
+    sql_connection, sqlite_cursor = setup_sqlite_connection()
+
+    # Insert-or-replace new data
+    logging.info('Beginning populating process. Old records will be overwritten.')
     import_works_csv(sqlite_cursor)
     import_authors_csv(sqlite_cursor)
     import_fandoms_csv(sqlite_cursor)
@@ -162,7 +180,6 @@ def clean_slate_sqlite():
     # import_relationship_tags_csv(sqlite_cursor)   # TODO Unimplemented
 
     # Setup for wrangled tags - # DO NOT UNCOMMENT UNLESS YOU KNOW WHAT YOU'RE DOING
-    # drop_and_setup_wrangled_tags(sqlite_cursor)  # DO NOT UNCOMMENT UNLESS YOU KNOW WHAT YOU'RE DOING
     # import_wrangled_work_tags(sqlite_cursor)  # DO NOT UNCOMMENT UNLESS YOU KNOW WHAT YOU'RE DOING
     # import_unwrangleable_work_tags(sqlite_cursor)  # DO NOT UNCOMMENT UNLESS YOU KNOW WHAT YOU'RE DOING
 

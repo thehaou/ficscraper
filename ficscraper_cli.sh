@@ -1,7 +1,9 @@
 #!/bin/bash
 
 usage() {
-  echo "usage: ficscraper_cli.sh [--scrape {bookmarks|history}] [--load {bookmarks|history}] [--generate {year_in_review <year>}]"
+  echo "usage: ficscraper_cli.sh [--scrape <target>] [--load <target>] [--wrangle <target>] "
+  echo "                         [--generate {year_in_review <year>}] [--test {login}]"
+  echo ""
   echo "-s, --scrape    {b|bookmarks            Uses HTTP + bs4 to scrape AO3 target."
   echo "                 h|history}             Requires login credentials in SETUP.INI."
   echo "                                        Time intensive."
@@ -16,6 +18,7 @@ usage() {
   echo "                                        (-w is optional.)"
   echo "                                        Artifacts are generated into /output."
   echo "                                        EX: year_in_review generates JPGs into /output/cards"
+  echo "-t, --test      {login}                 Tests various things like your credentials setup."
   echo ""
   echo "Multi-flags not supported at this time. Please do not run something like"
   echo "./ficscraper_cli.sh -s b -l b -w at ; it won't work the way you think it will."
@@ -53,17 +56,20 @@ for arg in "$@"; do
     '--load')     set -- "$@" '-l'   ;;
     '--wrangle')  set -- "$@" '-w'   ;;
     '--generate') set -- "$@" '-g'   ;;
-    "--"*)        usage; exit 1;;
+    '--test')     set -- "$@" '-t'   ;;
+    "--"*)        usage; exit 1      ;;
     *)            set -- "$@" "$arg" ;;
   esac
 done
 
 # Ideally this shell will kick off a script. Figure out which one.
 FLOW_DIRECTORY='src/flows/'
+TEST_PREFIX='tests.'
 script=''
+test_script=''
 
 # Process user options
-while getopts ':hw:s:g:l:' option; do
+while getopts ':hw:s:g:l:t:' option; do
   case "$option" in
     h)  usage; exit ;;
     s)  argument_checker
@@ -77,7 +83,7 @@ while getopts ':hw:s:g:l:' option; do
         ;;
     l)  argument_checker
         case "$OPTARG" in
-          b|'bookmarks') script='sqlite_reset_and_populate.py' ;;
+          b|'bookmarks') script='sqlite_populate_or_replace.py' ;;
           h|'history') echo "Currently unsupported, sorry!"; exit 1 ;;
           *) echo "Unrecognized argument passed in to -$option: $OPTARG"
              usage
@@ -89,6 +95,7 @@ while getopts ':hw:s:g:l:' option; do
           at|'all') echo "Currently unsupported, sorry!"; exit 1 ;;
           wt|'work_tags')  script='wrangle_unknown_tags.py' ;;
           ct|'character_tags') echo "Currently unsupported, sorry!"; exit 1 ;;
+          pt|'popular_tags') script='wrangle_popular_tags.py' ;;
           *) echo "Unrecognized argument passed in to -$option: $OPTARG"
              usage
              exit 1;;
@@ -102,13 +109,18 @@ while getopts ':hw:s:g:l:' option; do
              exit 1 ;;
         esac
         ;;
+    t)  argument_checker
+        case "$OPTARG" in
+          l|'login') test_script='ao3_requests' ;;
+        esac
+        ;;
     *)  echo "Unrecognized option passed in: $option"
         usage
         exit 1 ;;
   esac
 done
 
-if [[ -z "$script" ]]; then
+if [[ -z "$script" ]] && [[ -z "$test_script" ]]; then
   echo "Error: No script selected"
   usage
   exit 1
@@ -119,4 +131,11 @@ export PYTHONPATH="$PWD/src"
 
 # Send remaining arguments into the next callable
 shift $(( OPTIND - 1 ))
-python "$FLOW_DIRECTORY$script" "$@"
+
+# If testing, send to testing
+if [[ "$test_script" ]]; then
+  python -m unittest -v "$TEST_PREFIX$test_script"
+else
+  # Else send to flows
+  python "$FLOW_DIRECTORY$script" "$@"
+fi

@@ -2,7 +2,8 @@
 SETUP.INI
 .idea
 .DS_Store
-ao3_yir.db
+*.db
 output/cards/*.jpg
 output/csvs/*.csv
+output/csvs/deduped/*.csv
 output/jsons/*.json

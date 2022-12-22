@@ -356,7 +356,7 @@ def get_top_five_active(rows):
 def set_up_parser():
     parser = argparse.ArgumentParser(
         prog='year_in_review_make_cards.py',
-        description='Makes shareable JPGs ("cards") based on AO3 data stored in ao3_yir.db sqlite instance.'
+        description='Makes shareable JPGs ("cards") based on AO3 data stored in ficscraper.db sqlite instance.'
                     'Requires populating that instance first, such as via '
                     '\n\t./ficscraper_cli.sh --scrape bookmarks',
         epilog='https://github.com/thehaou/ficscraper#contact-info'
