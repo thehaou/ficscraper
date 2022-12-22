@@ -2,7 +2,7 @@
 
 usage() {
   echo "usage: ficscraper_cli.sh [--scrape <target>] [--load <target>] [--wrangle <target>] "
-  echo "                         [--generate {year_in_review <year>}]"
+  echo "                         [--generate {year_in_review <year>}] [--test {login}]"
   echo ""
   echo "-s, --scrape    {b|bookmarks            Uses HTTP + bs4 to scrape AO3 target."
   echo "                 h|history}             Requires login credentials in SETUP.INI."
