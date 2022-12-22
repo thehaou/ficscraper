@@ -27,8 +27,9 @@ for arg in "$@"; do
   shift
   case "$arg" in
     '--help')     set -- "$@" '-h'   ;;
-    '--wrangle')  set -- "$@" '-w'   ;;
     '--scrape')   set -- "$@" '-s'   ;;
+    '--load')     set -- "$@" '-l'   ;;
+    '--wrangle')  set -- "$@" '-w'   ;;
     '--generate') set -- "$@" '-g'   ;;
     "--"*)        help; exit 1;;
     *)            set -- "$@" "$arg" ;;
@@ -40,9 +41,16 @@ FLOW_DIRECTORY='src/flows/'
 script=''
 
 # Process user options
-while getopts ':hw:s:' option; do
+while getopts ':hw:s:g:l:' option; do
   case "$option" in
     h)  help; exit ;;
+    s)  argument_checker
+        case "$OPTARG" in
+          b|'bookmarks') script='scrape_bookmarks.py' ;;
+          h|'history') echo "Currently unsupported, sorry!"; exit 1 ;;
+          *) echo "Error"; exit 1 ;;
+        esac
+        ;;
     w)  argument_checker
         case "$OPTARG" in
           at|'all') echo "all tags";;
@@ -53,11 +61,16 @@ while getopts ':hw:s:' option; do
             exit 1;;
         esac
         exit ;;
-    s)  argument_checker
+    l)  argument_checker
         case "$OPTARG" in
-          b|'bookmarks') script='scrape_bookmarks.py' ;;
+          b|'bookmarks') script='sqlite_reset_and_populate.py' ;;
           h|'history') echo "Currently unsupported, sorry!"; exit 1 ;;
           *) echo "Error"; exit 1 ;;
+        esac
+        ;;
+    g)  argument_checker
+        case "$OPTARG" in
+          y|'year_in_review') script='year_in_review_make_cards.py' ;;
         esac
         ;;
     *)  echo "Unrecognized option passed in: $option"

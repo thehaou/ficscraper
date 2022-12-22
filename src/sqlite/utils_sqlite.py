@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 
 from sqlite.constants import SQLITE_DIR
@@ -7,10 +8,12 @@ from sqlite.utils_import_csv import import_works_csv, import_fandoms_csv, import
 
 def setup_sqlite_connection():
     # Make a new db; open connection
+    logging.info('Connecting to sqlite instance ao3_yir.db...')
     con = sqlite3.connect(SQLITE_DIR + "/ao3_yir.db")
 
     # Get a cursor so we can execute SQL
     cur = con.cursor()
+    logging.info('Connected!')
     return con, cur
 
 
@@ -41,15 +44,25 @@ def drop_and_setup_wrangled_tags(cur):
     '''
     cur.execute(create_table)
 
+
 def drop_and_setup_sqlite():
     con, cur = setup_sqlite_connection()
 
+    logging.info('\n')
+    logging.info('/ ~~~~~~~~~~~~~~~~~~~~~~~ \\')
+    logging.info('|   sqlite - drop & load   |')
+    logging.info('\\ ~~~~~~~~~~~~~~~~~~~~~~~ /')
+    logging.info('Due to the constantly updating nature of fic (such as word count & chapters), '
+                 'ficscraper drops & recreates all db tables used to calculate fanfic stats.')
+
     # Create tables for works first
+    logging.info('Dropping works table...')
     drop_query = """
     DROP TABLE IF EXISTS works;
     """
     cur.execute(drop_query)
 
+    logging.info('Creating works table...')
     create_table = '''
     CREATE TABLE works(
     work_id INTEGER PRIMARY KEY,
@@ -66,11 +79,13 @@ def drop_and_setup_sqlite():
     cur.execute(create_table)
 
     # Then for fandoms...
+    logging.info('Dropping fandoms table...')
     drop_query = """
     DROP TABLE IF EXISTS fandoms;
     """
     cur.execute(drop_query)
 
+    logging.info('Creating fandoms table...')
     create_table = '''
     CREATE TABLE fandoms(
     work_id INTEGER NOT NULL,
@@ -80,11 +95,13 @@ def drop_and_setup_sqlite():
     cur.execute(create_table)
 
     # Then authors...
+    logging.info('Dropping authors table...')
     drop_query = """
     DROP TABLE IF EXISTS authors;
     """
     cur.execute(drop_query)
 
+    logging.info('Creating authors table...')
     create_table = '''
     CREATE TABLE authors(
     work_id INTEGER NOT NULL,
@@ -95,11 +112,13 @@ def drop_and_setup_sqlite():
     cur.execute(create_table)
 
     # Then warnings...
+    logging.info('Dropping warnings table...')
     drop_query = """
     DROP TABLE IF EXISTS warnings;
     """
     cur.execute(drop_query)
 
+    logging.info('Creating warnings table...')
     create_table = '''
     CREATE TABLE warnings(
     work_id INTEGER NOT NULL,
@@ -109,11 +128,13 @@ def drop_and_setup_sqlite():
     cur.execute(create_table)
 
     # Then additional tags... (this is separate from wrangled tags, and we pretty much never want to drop wrangled tags)
+    logging.info('Dropping work_tags table... (this is separate from our cache of known wrangled tags)')
     drop_query = """
     DROP TABLE IF EXISTS work_tags;
     """
     cur.execute(drop_query)
 
+    logging.info('Creating work_tags table...')
     create_table = '''
     CREATE TABLE work_tags(
     work_id INTEGER NOT NULL,
@@ -122,6 +143,7 @@ def drop_and_setup_sqlite():
     '''
     cur.execute(create_table)
 
+    logging.info('Done dropping & creating tables')
     return con, cur
 
 
@@ -129,10 +151,14 @@ def clean_slate_sqlite():
     # Setup
     sql_connection, sqlite_cursor = drop_and_setup_sqlite()
     import_works_csv(sqlite_cursor)
-    import_fandoms_csv(sqlite_cursor)
     import_authors_csv(sqlite_cursor)
+    import_fandoms_csv(sqlite_cursor)
     import_warnings_csv(sqlite_cursor)
     import_work_tags(sqlite_cursor)
+    # import_user_tags_csv(sqlite_cursor)           # TODO Unimplemented
+    # import_series_tags_csv(sqlite_cursor)         # TODO Unimplemented
+    # import_character_tags_csv(sqlite_cursor)      # TODO Unimplemented
+    # import_relationship_tags_csv(sqlite_cursor)   # TODO Unimplemented
 
     # Setup for wrangled tags - # DO NOT UNCOMMENT UNLESS YOU KNOW WHAT YOU'RE DOING
     # drop_and_setup_wrangled_tags(sqlite_cursor)  # DO NOT UNCOMMENT UNLESS YOU KNOW WHAT YOU'RE DOING
@@ -140,5 +166,7 @@ def clean_slate_sqlite():
     # import_unwrangleable_work_tags(sqlite_cursor)  # DO NOT UNCOMMENT UNLESS YOU KNOW WHAT YOU'RE DOING
 
     # Cleanup
+    logging.info('Committing changes back to sqlite db')
     sql_connection.commit()
+    logging.info('Closing connection to sqlite db')
     sql_connection.close()
