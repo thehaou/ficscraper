@@ -12,12 +12,15 @@ from sqlite.constants import ROOT_DIR
 
 class AO3ConnectionTest(unittest.TestCase):
     def testCredentialsFileExists(self):
-        self.assertTrue(os.path.exists(ROOT_DIR + '/SETUP.INI'))
+        self.assertTrue(os.path.exists(ROOT_DIR + '/SETUP.INI'),
+                        msg='Please make a copy of SETUP.INI_TEMPLATE called SETUP.INI.')
 
     def testReadCredentials(self):
         username, password = read_credentials()
-        self.assertNotEqual(username, 'your_username_here')
-        self.assertNotEqual(password, 'your_password_here')
+        self.assertNotEqual(username, 'your_username_here',
+                            msg='Please replace the username field in SETUP.INI with your username.')
+        self.assertNotEqual(password, 'your_password_here',
+                            msg='Please replace the password field in SETUP.INI with your password.')
 
     def testLogin(self):
         username, password = read_credentials()
@@ -38,4 +41,6 @@ class AO3ConnectionTest(unittest.TestCase):
         })
 
         login_fail = 'Please try again' in req.text
-        self.assertFalse(login_fail)
+        self.assertFalse(login_fail,
+                         msg='Please check that you can log into AO3 on browser right now '
+                             'with the credentials you provided.')
