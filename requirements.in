@@ -1,0 +1,27 @@
+# Used to read AO3 credentials from SETUP.INI in this repo
+configparser==5.3.0
+
+# Used to hit AO3
+requests==2.28.1
+certifi==2022.12.7
+charset-normalizer==2.1.1
+idna==3.4
+urllib3==1.26.13
+
+# Used to parse scraped HTML from AO3
+bs4==0.0.1
+beautifulsoup4==4.11.1
+soupsieve==2.3.2.post1
+
+# Used to dedupe CSV data importing into sqlite
+pandas==1.5.2
+numpy==1.24.0
+python-dateutil==2.8.2
+six==1.16.0
+pytz==2022.7
+
+# Used to generate card images
+Mako==1.2.4
+MarkupSafe==2.1.1
+# html2image screenshots the HTML on a browser, default Chrome
+html2image==2.0.1

@@ -1,5 +1,6 @@
 import csv
 import json
+import logging
 
 import pandas as pd
 
@@ -37,6 +38,7 @@ def import_wrangled_work_tags(cur):
 
 
 def import_work_tags(cur):
+    logging.info('Deduping & importing work_tags.csv...')
     # Clean CSV - move this out to another step
     df = pd.read_csv(ROOT_DIR + '/output/csvs/work_tags.csv')
     df.drop_duplicates(inplace=True)
@@ -58,6 +60,7 @@ def import_work_tags(cur):
 
 
 def import_warnings_csv(cur):
+    logging.info('Deduping & importing warnings.csv...')
     # Clean CSV - move this out to another step
     df = pd.read_csv(ROOT_DIR + '/output/csvs/warnings.csv')
     df.drop_duplicates(inplace=True)
@@ -78,6 +81,7 @@ def import_warnings_csv(cur):
 
 
 def import_authors_csv(cur):
+    logging.info('Deduping & importing authors.csv...')
     # Clean CSV - move this out to another step
     df = pd.read_csv(ROOT_DIR + '/output/csvs/authors.csv')
     df.drop_duplicates(inplace=True)
@@ -101,6 +105,7 @@ def import_authors_csv(cur):
 
 
 def import_fandoms_csv(cur):
+    logging.info('Deduping & importing fandoms.csv...')
     # Clean CSV - move this out to another step
     df = pd.read_csv(ROOT_DIR + '/output/csvs/fandoms.csv')
     df.drop_duplicates(inplace=True)
@@ -122,10 +127,11 @@ def import_fandoms_csv(cur):
 
 
 def import_works_csv(cur):
+    logging.info('Deduping & importing works.csv...')
     # Clean CSV - move this out to another step
     df = pd.read_csv(ROOT_DIR + '/output/csvs/works.csv')
     df.drop_duplicates(inplace=True)
-    df.to_csv(ROOT_DIR + '/output/csvs/deduped/works.csv', index=False)
+    df.to_csv(ROOT_DIR + '/output/csvs/deduped/works.csv', index=False)  # TODO for some reason pd is converting total_chapters_count to float?
 
     with open(ROOT_DIR + '/output/csvs/deduped/works.csv', 'r') as f:
         contents = csv.reader(f)
