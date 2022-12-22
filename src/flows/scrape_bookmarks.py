@@ -6,6 +6,7 @@ import csv
 import configparser
 
 from scrapers.ao3.bookmark_scraper import AO3BookmarkScraper
+from scrapers.ao3.utils_requests import read_credentials
 
 
 def set_up_parser():
@@ -46,11 +47,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Read the user's credentials
-    logging.info('Reading user\'s credentials...')
-    config = configparser.ConfigParser()
-    config.read('SETUP.INI')
-    username = config.get('ao3', 'username')
-    password = config.get('ao3', 'password')
+    username, password = read_credentials()
 
     # Use said credentials...
     ao3_scraper = AO3BookmarkScraper(username, password)

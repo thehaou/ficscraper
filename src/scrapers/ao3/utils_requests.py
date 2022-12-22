@@ -1,10 +1,26 @@
 import logging
 from time import sleep
 
+import configparser
 import requests
 from bs4 import BeautifulSoup
 
 from scrapers.ao3 import constants
+from sqlite.constants import ROOT_DIR
+
+
+def read_credentials():
+    """Reads SETUP.INI for username & password.
+    Doesn't actually use requests lib at all (it's all local), but since it's directly used to set up
+    AO3 sessions, it's going into this util class.
+    :return: username:str, password:str
+    """
+    logging.info('Reading user\'s credentials...')
+    config = configparser.ConfigParser()
+    config.read(ROOT_DIR + '/SETUP.INI')
+    username = config.get('ao3', 'username')
+    password = config.get('ao3', 'password')
+    return username, password
 
 
 def setup_ao3_session(username, password):

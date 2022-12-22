@@ -6,16 +6,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.ao3 import constants
+from scrapers.ao3.utils_requests import read_credentials
 from sqlite.constants import ROOT_DIR
-
-
-def read_credentials():
-    # Read the user's credentials
-    config = configparser.ConfigParser()
-    config.read(ROOT_DIR + '/SETUP.INI')
-    username = config.get('ao3', 'username')
-    password = config.get('ao3', 'password')
-    return username, password
 
 
 class AO3ConnectionTest(unittest.TestCase):

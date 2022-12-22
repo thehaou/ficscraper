@@ -2,6 +2,7 @@ import logging
 import configparser
 
 from scrapers.ao3.tag_wrangler import AO3TagWrangler
+from scrapers.ao3.utils_requests import read_credentials
 from sqlite.constants import ROOT_DIR
 
 
@@ -11,11 +12,7 @@ if __name__ == '__main__':
                         format="%(levelname)s - %(message)s")
 
     # Read the user's credentials
-    logging.info('Reading user\'s credentials...')
-    config = configparser.ConfigParser()
-    config.read(ROOT_DIR + '/SETUP.INI')
-    username = config.get('ao3', 'username')
-    password = config.get('ao3', 'password')
+    username, password = read_credentials()
 
     # Use said credentials...
     wrangle_scraper = AO3TagWrangler(username=username, password=password)
