@@ -189,8 +189,8 @@ def calc_works_per_rating(cur, year: int = None):
     return rows
 
 
-def select_top_10_addn_tags_per_rating(cur, year: int = None):
-    print("Running top 10 additional tags per work rating (ex E/M/T/G/unrated)")
+def select_top_10_wrangled_addn_tags_per_rating(cur, year: int = None):
+    print("Running top 10 wrangled additional tags per work rating (ex E/M/T/G/unrated)")
     date_where = ''
     if year:
         epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
@@ -228,6 +228,44 @@ def select_top_10_addn_tags_per_rating(cur, year: int = None):
         print(r)
     return rows
 
+
+def select_top_10_addn_tags_per_rating(cur, year: int = None):
+    print("Running top 10 additional tags per work rating (ex E/M/T/G/unrated)")
+    date_where = ''
+    if year:
+        epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        epoch_end = datetime.datetime(year=year + 1, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')
+        date_where = 'WHERE date_bookmarked >= {epoch_start} AND date_bookmarked < {epoch_end}' \
+            .format(epoch_start=epoch_start, epoch_end=epoch_end)
+
+    calc_query = """    
+    WITH tag_counts_cte AS 
+    (
+        SELECT cr, tag_id, num_occ, ROW_NUMBER() OVER ( 
+                                        PARTITION BY cr 
+                                        ORDER BY num_occ DESC ) row_number
+        FROM (    
+            SELECT 
+                works.content_rating as cr, 
+                work_tags.work_tag_id as tag_id, 
+                COUNT(works.work_id) as num_occ                 
+            FROM works    
+            INNER JOIN work_tags ON works.work_id = work_tags.work_id                
+            {date_where}        
+            GROUP BY works.content_rating, work_tags.work_tag_id
+            ORDER BY num_occ DESC
+        )        
+    ) 
+    SELECT cr, tag_id, num_occ
+    FROM tag_counts_cte
+    WHERE row_number <= 10
+    ORDER BY cr DESC
+     
+    """.format(date_where=date_where)
+    rows = cur.execute(calc_query).fetchall()
+    for r in rows:
+        print(r)
+    return rows
 
 def calc_num_unwrangled_work_tags(cur):
     select_query = """
@@ -273,7 +311,8 @@ if __name__ == '__main__':
     # calc_works_per_author(sqlite_cursor, year=2022)
 
     # --- Top 20 additional tags per work ratings
-    select_top_10_addn_tags_per_rating(sqlite_cursor, year=2022)
+    # select_top_10_wrangled_addn_tags_per_rating(sqlite_cursor, year=2022)
+    # select_top_10_addn_tags_per_rating(sqlite_cursor, year=2022)
 
     # --- # of unwrangled works
     # calc_num_unwrangled_work_tags(sqlite_cursor)
