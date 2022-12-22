@@ -5,3 +5,4 @@ SETUP.INI
 ao3_yir.db
 output/cards/*.jpg
 output/csvs/*.csv
+output/jsons/*.json
