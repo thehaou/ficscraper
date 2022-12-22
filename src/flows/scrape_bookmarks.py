@@ -43,7 +43,7 @@ def set_up_parser():
 
 if __name__ == '__main__':
     # Set up logging
-    logging.basicConfig(level=logging.INFO, # Switch to logging.INFO for less output
+    logging.basicConfig(level=logging.INFO,  # Switch to logging.INFO for less output
                         format="%(levelname)s - %(message)s")
 
     # Set up parser
