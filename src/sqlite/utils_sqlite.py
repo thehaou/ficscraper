@@ -183,6 +183,12 @@ def populate_sqlite():
     # import_wrangled_work_tags(sqlite_cursor)  # DO NOT UNCOMMENT UNLESS YOU KNOW WHAT YOU'RE DOING
     # import_unwrangleable_work_tags(sqlite_cursor)  # DO NOT UNCOMMENT UNLESS YOU KNOW WHAT YOU'RE DOING
 
+    # Cleanup
+    logging.info('Committing changes back to sqlite db')
+    sql_connection.commit()
+    logging.info('Closing connection to sqlite db')
+    sql_connection.close()
+
 
 def format_date_where(year: int):
     epoch_start = datetime.datetime(year=year, month=1, day=1, hour=0, minute=0, second=0).strftime('%s')

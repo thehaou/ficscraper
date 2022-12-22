@@ -1,7 +1,6 @@
 import logging
 import configparser
 
-# Set up logging
 from scrapers.ao3.tag_wrangler import AO3TagWrangler
 from sqlite.constants import ROOT_DIR
 
