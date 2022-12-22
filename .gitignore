@@ -5,4 +5,5 @@ SETUP.INI
 *.db
 output/cards/*.jpg
 output/csvs/*.csv
+output/csvs/deduped/*.csv
 output/jsons/*.json
