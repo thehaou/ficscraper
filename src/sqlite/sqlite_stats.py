@@ -33,7 +33,6 @@ def calc_total_wc_read(cur, year: int = None):
     FROM works
     {date_where}
     """.format(date_where=date_where)
-    # print(calc_query)
     rows = cur.execute(calc_query).fetchall()
     # for r in rows:
     #     print(r)
@@ -53,7 +52,6 @@ def select_biggest_works(cur, year: int = None):
     {date_where}
     ORDER BY word_count DESC
     """.format(date_where=date_where)
-    print(select_query)
     rows = cur.execute(select_query).fetchall()
     # for r in rows:
     #     print(r)
@@ -69,9 +67,9 @@ def calc_most_per_fandom(cur):
     ORDER BY num_fics DESC
     """
     rows = cur.execute(calc_query).fetchall()
-    for r in rows:
-        print(r)
-
+    # for r in rows:
+    #     print(r)
+    return rows
 
 def calc_wc_and_works_per_fandom(cur, year: int = None):
     print("Running wordcount per fandom")
@@ -114,7 +112,6 @@ def select_first_fic_per_fandom_wc(cur, year: int = None):
     GROUP BY fandoms.fandom_name
     ORDER BY total_wc DESC
     """.format(date_where=date_where)
-    print(calc_query)
     rows = cur.execute(calc_query).fetchall()
     # for r in rows:
     #     print(r)
@@ -184,8 +181,8 @@ def calc_works_per_rating(cur, year: int = None):
     ORDER BY num_works DESC
     """.format(date_where=date_where)
     rows = cur.execute(calc_query).fetchall()
-    for r in rows:
-        print(r)
+    # for r in rows:
+    #     print(r)
     return rows
 
 
@@ -222,7 +219,6 @@ def select_top_10_wrangled_addn_tags_per_rating(cur, year: int = None):
     WHERE row_number <= 10
     ORDER BY cr DESC     
     """.format(date_where=date_where)
-    print(calc_query)
     rows = cur.execute(calc_query).fetchall()
     # for r in rows:
         # print(r)
@@ -262,8 +258,8 @@ def select_top_10_addn_tags_per_rating(cur, year: int = None):
     ORDER BY cr DESC     
     """.format(date_where=date_where)
     rows = cur.execute(calc_query).fetchall()
-    for r in rows:
-        print(r)
+    # for r in rows:
+    #     print(r)
     return rows
 
 
@@ -285,8 +281,8 @@ def calc_num_unwrangled_work_tags(cur):
         """
     rows = cur.execute(select_query).fetchall()
     print("{} rows".format(len(rows)))
-    for r in rows:
-        print(r)
+    # for r in rows:
+    #     print(r)
 
     if len(rows) > 0:
         print('You can run the following to capture these: \n\t./ficscraper --wrangle work_tags')
@@ -300,27 +296,27 @@ if __name__ == '__main__':
     # Let's calculate stats
     # --- Just works
     # select_all(sqlite_cursor)  # Testing
-    # calc_total_wc_read(sqlite_cursor, year=2022)
-    # select_biggest_works(sqlite_cursor, year=2022)
-    # calc_works_per_rating(sqlite_cursor, year=2022)
+    calc_total_wc_read(sqlite_cursor, year=2022)
+    select_biggest_works(sqlite_cursor, year=2022)
+    calc_works_per_rating(sqlite_cursor, year=2022)
 
     # --- Just fandoms
-    # calc_most_per_fandom(sqlite_cursor)
+    calc_most_per_fandom(sqlite_cursor)
 
     # --- Works AND fandoms
-    # calc_wc_and_works_per_fandom(sqlite_cursor, year=2022)
-    # select_first_fic_per_fandom_wc(sqlite_cursor, year=2022)
+    calc_wc_and_works_per_fandom(sqlite_cursor, year=2022)
+    select_first_fic_per_fandom_wc(sqlite_cursor, year=2022)
 
     # --- Works AND authors
-    # calc_wc_per_author(sqlite_cursor, year=2022)
-    # calc_works_per_author(sqlite_cursor, year=2022)
+    calc_wc_per_author(sqlite_cursor, year=2022)
+    calc_works_per_author(sqlite_cursor, year=2022)
 
     # --- Top 20 additional tags per work ratings
     select_top_10_wrangled_addn_tags_per_rating(sqlite_cursor, year=2022)
-    # select_top_10_addn_tags_per_rating(sqlite_cursor, year=2022)
+    select_top_10_addn_tags_per_rating(sqlite_cursor, year=2022)
 
     # --- # of unwrangled works
-    # calc_num_unwrangled_work_tags(sqlite_cursor)
+    calc_num_unwrangled_work_tags(sqlite_cursor)
 
     # Cleanup
     sql_connection.commit()
