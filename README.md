@@ -1,5 +1,7 @@
 # 🚢📚🔖 ficscraper ✍💬❤️
-[How it works](#supported-fanfiction-websites) • [System requirements](#requirements) • [AO3 Year-In-Review]() • [Roadmap](#roadmap)
+⚠️ [Getting Started / Installation](https://github.com/thehaou/ficscraper/wiki/Installation) • ❓[How to Use](https://github.com/thehaou/ficscraper/wiki/How-to-Use) • 🙋 [FAQ/Q&A](#frequently-asked-questions) • 📌 [Roadmap](#roadmap)
+
+❄️ [AO3 Year-In-Review](https://github.com/thehaou/ficscraper/wiki/How-to-Use#year-in-review) • 📈 [Ad Hoc Stats](https://github.com/thehaou/ficscraper/tree/master/src/sqlite/)
 
 ---
 
@@ -10,56 +12,21 @@ The goal of `ficscraper` is to provide fanfiction readers with a way to generate
 * For each fandom I read this year, what was the order I started reading them in, and which fic did I read from them first?
 * Based on the tags of all the fics I've read, what would my "ideal fic" look like?
 
-(And so on.)
+And so on. Fanfiction itself is a labor of love and I genuinely hope that `ficscraper` can provide you with some interesting ways to investigate your own personal relationship with it.
+### Getting Started / Installation 
+This repo now has a wiki! Installation instructions [here](https://github.com/thehaou/ficscraper/wiki/Installation).
 
-## Supported fanfiction websites
-Currently `ficscraper` only supports stats on [Archive of Our Own](https://archiveofourown.org/) (aka AO3). This is due to AO3's rich tagging system that allows significant more flexibility in finding patterns in fics read.
+### How to Use
+How-to-use instructions [here](https://github.com/thehaou/ficscraper/wiki/How-to-Use).
 
-Other fanfiction websites such as [FanFiction.net](https://www.fanfiction.net/) (FFN), [Wattpad](https://www.wattpad.com/), and [Tumblr blogs dedicated to fic writing](https://www.tumblr.com/tagged/fanfiction?sort=top) are considered out-of-scope for this project until I feel `ficscraper`'s AO3 side is sufficiently developed. I more than welcome discussion on implementation of `ficscraper` for other websites though!
-
-## Functionality
-`ficscraper` works in three stages:
-1. **Extract** user's interactions with fic, such as:
-   1. reading history
-   2. kudos history
-   3. personal bookmarks & tags
-2. **Transfer & load** the collected information into SQLite, an extremely handy no-installation-needed/in-memory/embedded database management system.
-   1. One could actually stop at this stage if they want to begin running stats on their interactions. See here (TODO) for example queries you can run against SQLite. For users unfamiliar with Python or coding in general, see here (TODO) for a detailed walkthrough on how to get some popular types of stats.
-3. **Visualize** certain types of interactions into something nicely readable for humans (and can be shared)!
-   1. See here (TODO) for `ficscraper`'s current visualization templates. (It uses templated HTML+CSS with some Python mixed in.)
-   2. If you're here to learn how to create your own **AO3-Year-In-Review**, see here (TODO).
-
-## Frequent Q&A
-Please submit legitimate bugs/errors with `ficscraper` to Issues (see here (TODO)), and all other suggestsions/questions to Discussions (see here (TODO)).
-
----
-
-**Q.** Why didn't you make a website and have it run ficscraper for me instead? I don't want to have to do all this coding work, and it'd be nice if I could just login and see my stats rather than have to do upkeep myself.
-
-**A.** A couple key reasons. 
-
-1. I'm setting up a session with AO3 by literally scraping the authentication token and using it for the whole session. Furthermore, I'm requiring plaintext username & passwords to even grab said token. This is frankly way out of my comfort zone to even think about putting on a website - I'm not fluent in implementing website security, and I don't want to be on the hook for your account getting hacked.
-2. AO3 rate limits approximately 20 requests per 10 minutes. This is perfectly fine when you're slowly reading through a multichapter fic - it's less fine when there are 200+ pages of bookmarks `ficscraper` is trying to grab. Multiply it out to multiple users and you can quickly see how the throughput of this falls through the floor.
-
----
-
-**Q.** Why Python 3.9?
-
-**A.** No real reason; it was newish at the time of implementation and bs4 is pretty straightforward to use in Python.
-
-## Requirements
-This project runs on Python 3.9. You will unfortunately need to have Python installed.
-
-1. See here (TODO) if you're not a coder and have never touched Python before - this is a step-by-step guide on how to cleanly install it onto your system, whether that be Windows/Mac (aka Unix)/Linux
-2. Once you're done installing Python 3.9, see here (TODO) for `ficscraper`'s instructions.
-
-## Roadmap
+### Roadmap
 This is a hobby project I started back in 2018 when I discovered AO3 had axed any plans to make a public API for stats. It was brought back to life in 2022 after being inspired by Spotify Wrapped; I had fallen deep into the Batman iceberg that year and wanted to make my own AO3 Year-In-Review to send my friends.
+
 As such, this will continue to be updated whenever I a) feel the urge b) have the time. Discussion is welcome, as are contributions (though I'd like to review all incoming PRs).
 
-Fanfiction itself is a labor of love and I genuinely hope that `ficscraper` can provide you with some interesting ways to investigate your own personal relationship with it.
+The following are vaguely ordered in terms of priority:
 
-### More card templates for AO3 Year-In-Review 
+#### More card templates for AO3 Year-In-Review
 1. Big stat template (eg. total wordcount)
 2. Reading personality (5 letters, 10 values, slider representation, different CSS border per result) (ex: multichap/longfic/angst/fandom-loyal/multiship)
 3. E/M/T/G/unknown %s
@@ -68,10 +35,15 @@ Fanfiction itself is a labor of love and I genuinely hope that `ficscraper` can 
 6. Timeline of when you got into a fandom throughout the year
 7. Bucket template (eg. 0k-2k, 2k-20k, 2k-200k, 200k+)
 
-### Support for ingesting User History
-TODO
+#### Support for including ranking stats by user-defined bookmark tags
+TODO - this is based off of my own personal SS/S/A/B/C ranking system on bookmarks. Include a writeup about why I use this system and how I've gotten mileage out of it.
 
-### Support for figuring out just how far behind you are on subscriptions
+#### Support for ingesting User History
+Most folks don't bookmark. Supporting User History would be big.
+
+(Feature request [here](https://github.com/thehaou/ficscraper/issues/3))
+
+#### Support for figuring out just how far behind you are on subscriptions
 History politely tells you when you last visited a fic, and whether or not the fic has been updated since. The Chapter Index for a work (https://archiveofourown.org/works/<work_id>/navigate) tells you exactly when a chapter was uploaded.
 
 Combining the two, `ficscraper` could generate a list of all your in-progress subscriptions and the exact chapter you left off on. This is helpful if you have subscription notifs turned off for some reason (why?) or you subscribed to too many fics, and don't want to look up one-by-one in your notifications for which chapter you left off on.
@@ -80,14 +52,14 @@ My personal goal for calculating this stat would be getting this exported visual
 
 Some pitfalls: AO3 tells you when you last visited; it doesn't tell you when you first subscribed. This stat generation is reliant on you NOT visiting a fic since you subscribed, and once you DO visit again, you read all the way to the most recent chapter.
 
-### Support for ingesting User Collections
-TODO
+#### Support for ingesting User Collections
+Some folks use collections. Need to gather more info about folks who use these.
 
-### Support for stats for fanfic writers
-TODO
+#### Support for stats for fanfic writers
+Need to look into this. Is there anything scraping can provide that the AO3 Statistics page can't? My gut says no, but it's worth looking into regardless.
 
-## Contact Info
+### Contact Info
 I'd prefer if discussion was kept to the Discussions tab, but if for some reason you need to contact me directly, my Discord tag is `thehaou#5166`.
 
-## Disclaimer
-I am certainly not affiliated with the Organization of Transformative Works in any way - this in an unofficial fan-made repo. 
+### Disclaimer
+I am certainly not affiliated with the Organization of Transformative Works in any way - this in an unofficial fan-made repo.
