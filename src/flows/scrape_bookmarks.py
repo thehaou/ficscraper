@@ -57,7 +57,7 @@ if __name__ == '__main__':
     # Export user's bookmarks to JSON
     with open('output/jsons/bookmarks.json', 'w') as f:
         f.write(bookmarks_json)
-    logging.info('Done outputting bookmarks\' json (you can find it in output/json)')
+    logging.info('Done outputting bookmarks\' json (you can find it in output/jsons)')
 
     # Export user's bookmarks to various CSV
     for fics_data_kind in fics_dict.keys():
